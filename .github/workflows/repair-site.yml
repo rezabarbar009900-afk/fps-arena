@@ -15,12 +15,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Repair chatbot
+      - name: Repair chatbot and restore game layout
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
+
+          # Restore the original spacing above the game cards so the games sit lower like the original layout.
+          s=s.replace('.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:15px;margin-top:20px}', '.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:15px;margin-top:55px}')
+
           marker='FPSARENA_CHAT_HARDENED_V4'
           if marker not in s:
               extra=r'''<script id="fpsarena-chat-hardened">
@@ -36,7 +40,7 @@ jobs:
               const norm=s=>String(s||'').toLowerCase().replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[؟?!،,.]/g,' ').replace(/\\s+/g,' ').trim();
               const games=window.__fpsArenaGames || [];
               const phoneNames=['POCO C65','POCO C85','Redmi 13C','Redmi Note 13','Samsung Galaxy A15','Samsung Galaxy S23','iPhone 13','iPhone 15'];
-              const gameAliases={'فری فایر':'Free Fire','فری فایر':'Free Fire','پابجی':'PUBG Mobile','کالاف':'Call of Duty: Mobile','کال آف':'Call of Duty: Mobile','ماینکرفت':'Minecraft','گنشین':'Genshin Impact','ای فوتبال':'eFootball','براول':'Brawl Stars','استنداف':'Standoff 2'};
+              const gameAliases={'فری فایر':'Free Fire','پابجی':'PUBG Mobile','کالاف':'Call of Duty: Mobile','کال آف':'Call of Duty: Mobile','ماینکرفت':'Minecraft','گنشین':'Genshin Impact','ای فوتبال':'eFootball','براول':'Brawl Stars','استنداف':'Standoff 2'};
               const findGame=q=>{const n=norm(q);for(const k in gameAliases)if(n.includes(k))return gameAliases[k];for(const g of games)if(n.includes(norm(g[0])))return g[0];return null};
               const findPhone=q=>{const n=norm(q);for(const x of phoneNames)if(n.includes(norm(x))||n.includes(norm(x.replace(/^poco |^redmi |^samsung galaxy |^iphone /i,''))))return x;return null};
               const answer=q=>{
@@ -68,15 +72,14 @@ jobs:
             if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
           })();
           </script>'''
-              s=s.replace('</body>',extra+'\\n</body>')
-              p.write_text(s,encoding='utf-8')
+              s=s.replace('</body>',extra+'\n</body>')
+          p.write_text(s,encoding='utf-8')
           PY
 
       - name: Validate
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           s=Path('index.html').read_text(encoding='utf-8')
           checks=[
             ('doctype',s.lower().startswith('<!doctype html>')),
@@ -85,10 +88,11 @@ jobs:
             ('chat panel','id="aiChat"' in s),
             ('chat form','id="aiForm"' in s),
             ('hardened','FPSARENA_CHAT_HARDENED_V4' in s),
+            ('games spacing','margin-top:55px' in s),
           ]
           bad=[k for k,v in checks if not v]
           if bad: raise SystemExit('Validation failed: '+', '.join(bad))
-          print('Chat validation passed')
+          print('FPS ARENA validation passed')
           PY
 
       - name: Commit repaired site
@@ -96,5 +100,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Harden chatbot interaction [site-repair]"
+          git diff --cached --quiet || git commit -m "Restore game list position [site-repair]"
           git push
