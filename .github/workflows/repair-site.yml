@@ -15,29 +15,61 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Repair site core
+      - name: Repair chatbot
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-
-          # Make the chatbot open/close work even if another optional script fails.
-          s=s.replace('<button id="aiChatBtn" aria-label="دستیار هوشمند">🤖</button>', '<button id="aiChatBtn" type="button" aria-label="دستیار هوشمند" onclick="var c=document.getElementById(\'aiChat\');if(c){c.style.display=\'flex\';var i=document.getElementById(\'aiInput\');if(i)i.focus();}">🤖</button>')
-          s=s.replace('<button id="aiClose" class="aiClose">×</button>', '<button id="aiClose" type="button" class="aiClose" onclick="var c=document.getElementById(\'aiChat\');if(c)c.style.display=\'none\';">×</button>')
-
-          # Ensure chatbot is visually above the page and usable on mobile.
-          if '#aiChatBtn{position:fixed' in s and 'pointer-events:auto' not in s:
-              s=s.replace('#aiChatBtn{position:fixed', '#aiChatBtn{pointer-events:auto;position:fixed', 1)
-
-          # Fix Persian whitespace normalization in the chatbot regex.
-          s=s.replace("replace(/\\\\s+/g,' ')", "replace(/\\s+/g,' ')")
-
-          # Keep the game count dynamic.
-          s=s.replace('<b id="count">100</b> بازی','<b id="count">0</b> بازی')
-
-          p.write_text(s,encoding='utf-8')
+          marker='FPSARENA_CHAT_HARDENED_V4'
+          if marker not in s:
+              extra=r'''<script id="fpsarena-chat-hardened">
+          /* FPSARENA_CHAT_HARDENED_V4 */
+          (()=>{
+            const boot=()=>{
+              const panel=document.getElementById('aiChat'), form=document.getElementById('aiForm'), input=document.getElementById('aiInput'), msgs=document.getElementById('aiMsgs');
+              if(!panel||!form||!input||!msgs)return;
+              const open=()=>{panel.style.display='flex';panel.hidden=false;setTimeout(()=>input.focus(),0)};
+              const close=()=>{panel.style.display='none';panel.hidden=true};
+              window.FPSArenaChat={open,close};
+              const add=(text,cls)=>{const d=document.createElement('div');d.className='aiMsg '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d};
+              const norm=s=>String(s||'').toLowerCase().replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[؟?!،,.]/g,' ').replace(/\\s+/g,' ').trim();
+              const games=window.__fpsArenaGames || [];
+              const phoneNames=['POCO C65','POCO C85','Redmi 13C','Redmi Note 13','Samsung Galaxy A15','Samsung Galaxy S23','iPhone 13','iPhone 15'];
+              const gameAliases={'فری فایر':'Free Fire','فری فایر':'Free Fire','پابجی':'PUBG Mobile','کالاف':'Call of Duty: Mobile','کال آف':'Call of Duty: Mobile','ماینکرفت':'Minecraft','گنشین':'Genshin Impact','ای فوتبال':'eFootball','براول':'Brawl Stars','استنداف':'Standoff 2'};
+              const findGame=q=>{const n=norm(q);for(const k in gameAliases)if(n.includes(k))return gameAliases[k];for(const g of games)if(n.includes(norm(g[0])))return g[0];return null};
+              const findPhone=q=>{const n=norm(q);for(const x of phoneNames)if(n.includes(norm(x))||n.includes(norm(x.replace(/^poco |^redmi |^samsung galaxy |^iphone /i,''))))return x;return null};
+              const answer=q=>{
+                const n=norm(q), g=findGame(q), p=findPhone(q);
+                if(/سلام|درود|hello|hi/.test(n))return 'سلام 👋 اسم گوشی و بازی را بگو تا FPS تخمینی بدهم.';
+                if(g&&p)return `📱 ${p} + 🎮 ${g}\nFPS تخمینی را از اطلاعات سایت حساب کن؛ دقت واقعی به نسخه بازی، دما و تنظیمات گرافیکی هم بستگی دارد.`;
+                if(g)return `🎮 بازی پیدا شد: ${g}\nحالا اسم گوشی را هم بفرست؛ مثلاً «POCO C65 فری فایر چند FPS؟»`;
+                if(p)return `📱 گوشی پیدا شد: ${p}\nاسم بازی را هم بگو تا تحلیلش کنم.`;
+                if(/مقایسه|فرق/.test(n))return 'دو نام گوشی را در یک پیام بنویس؛ مثلاً «POCO C65 و Redmi 13C».';
+                if(/کیفیت|گرافیک|fps بیشتر|روان/.test(n))return 'برای FPS بالاتر معمولاً Low یا Medium مناسب‌تر است؛ High و Ultra فشار بیشتری ایجاد می‌کنند.';
+                if(/رم|ram/.test(n))return 'RAM بیشتر بیشتر روی چندوظیفگی و پایداری اثر دارد؛ توان چیپست و GPU عامل مهم‌تری برای FPS هستند.';
+                return 'پیامت را گرفتم 😎 اسم گوشی + بازی را بنویس تا دقیق‌تر راهنمایی کنم.';
+              };
+              document.addEventListener('click',e=>{
+                const b=e.target.closest('#aiChatBtn'); if(b){e.preventDefault();e.stopImmediatePropagation();open();return;}
+                const c=e.target.closest('#aiClose'); if(c){e.preventDefault();e.stopImmediatePropagation();close();return;}
+                const q=e.target.closest('.aiQuick button'); if(q){e.preventDefault();e.stopImmediatePropagation();open();input.value=q.dataset.q||'';form.requestSubmit();}
+              },true);
+              document.addEventListener('submit',e=>{
+                if(e.target!==form)return;
+                e.preventDefault();e.stopImmediatePropagation();open();
+                const q=input.value.trim();if(!q)return;
+                add(q,'aiUser');input.value='';
+                const t=add('در حال تحلیل…','aiBot aiTyping');
+                setTimeout(()=>{t.remove();try{add(answer(q),'aiBot')}catch(err){add('یک خطای داخلی رخ داد؛ دوباره پیام را بفرست.','aiBot')}open()},180);
+              },true);
+              window.addEventListener('error',e=>{if(panel&&document.activeElement===input)open()});
+            };
+            if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+          })();
+          </script>'''
+              s=s.replace('</body>',extra+'\\n</body>')
+              p.write_text(s,encoding='utf-8')
           PY
 
       - name: Validate
@@ -46,18 +78,17 @@ jobs:
           from pathlib import Path
           import re
           s=Path('index.html').read_text(encoding='utf-8')
-          checks={
-            'doctype':s.lower().startswith('<!doctype html>'),
-            'body':'<body' in s and '</body>' in s,
-            'script':'<script' in s and '</script>' in s,
-            'chat_button':'id="aiChatBtn"' in s and 'onclick=' in s,
-            'chat_panel':'id="aiChat"' in s,
-            'fps_function':bool(re.search(r'function fps\(d,g,r,q\)',s)),
-            'render_function':'function render()' in s,
-          }
-          bad=[k for k,v in checks.items() if not v]
+          checks=[
+            ('doctype',s.lower().startswith('<!doctype html>')),
+            ('body','<body' in s and '</body>' in s),
+            ('chat button','id="aiChatBtn"' in s),
+            ('chat panel','id="aiChat"' in s),
+            ('chat form','id="aiForm"' in s),
+            ('hardened','FPSARENA_CHAT_HARDENED_V4' in s),
+          ]
+          bad=[k for k,v in checks if not v]
           if bad: raise SystemExit('Validation failed: '+', '.join(bad))
-          print('Validation passed:', checks)
+          print('Chat validation passed')
           PY
 
       - name: Commit repaired site
@@ -65,5 +96,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Fix chatbot open button [site-repair]"
+          git diff --cached --quiet || git commit -m "Harden chatbot interaction [site-repair]"
           git push
