@@ -15,98 +15,144 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply browser bug fixes
+      - name: Repair site core
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          marker = 'FPSARENA_BUGFIX_V2'
-          if marker not in s:
-              patch = r'''<script id="fps-arena-bugfix-v2">
-(function(){
-  const MARK='FPSARENA_BUGFIX_V2';
-  if(window.__FPSARENA_BUGFIX_V2)return;
-  window.__FPSARENA_BUGFIX_V2=true;
 
-  // Fix: device search was too strict (only exact full-name matches worked).
+          # Replace the old FPS estimator with a conservative, internally consistent model.
+          # It avoids impossible FPS values for low-end chips and respects common game caps.
+          new_fps = r'''function fps(d,g,r,q){
+          const load=Math.max(.2,Number(g[2])||1);
+          const qm={low:1.18,medium:1,high:.80,ultra:.62};
+          const ram=Math.max(4,Math.min(16,Number(r)||4));
+          const ramBoost=1+(ram-4)*.008;
+          const p=Math.max(.5,Number(power[d]??1.2));
+          const game=g[0]||'';
+
+          let cap=60;
+          if(/Free Fire|Brawl Stars|Clash Royale|Clash of Clans|Subway Surfers|Temple Run 2|Among Us|Geometry Dash|Stardew Valley|Terraria|Pokémon GO|Marvel Snap|Hearthstone|Legends of Runeterra|World Soccer Champs/i.test(game))cap=60;
+          else if(/Call of Duty: Mobile|PUBG Mobile|PUBG: New State|Critical Ops|Standoff 2|Mobile Legends|Arena of Valor|League of Legends|Rocket League Sideswipe|Blood Strike|Combat Master/i.test(game))cap=60;
+          else if(/Minecraft|Roblox|Asphalt|Real Racing 3|Need for Speed|eFootball|EA SPORTS FC Mobile|Dream League Soccer/i.test(game))cap=60;
+          else if(/Genshin Impact|Honkai|Wuthering Waves|Zenless Zone Zero|Warzone Mobile|Once Human|Undawn|Tower of Fantasy|CarX Street|Delta Force|Arena Breakout/i.test(game))cap=60;
+
+          // A small-device thermal/stability factor keeps estimates from claiming max FPS too easily.
+          const stability = p < 1.4 ? .88 : p < 2.2 ? .93 : p < 3.2 ? .97 : 1;
+          let target=48*p/(load*1.12)*(qm[q]??1)*ramBoost*stability;
+          target=Math.max(15,Math.min(cap,target));
+          const center=Math.round(target);
+          const spread=center<25?5:center<40?6:center<55?7:5;
+          const lo=Math.max(15,Math.min(cap,center-spread));
+          const hi=Math.max(lo,Math.min(cap,center+Math.max(3,Math.round(spread*.65))));
+          const percent=Math.max(0,Math.min(100,Math.round((center/cap)*100)));
+          return [lo,hi,percent];
+          }'''
+
+          pattern = r'function fps\(d,g,r,q\)\{.*?\}function render\(\)\{'
+          replacement = new_fps + r'function render(){'
+          s2, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if n:
+              s=s2
+
+          # Make the phone search reliable: partial names, Persian spacing and Enter all work.
+          marker='FPSARENA_BUGFIX_V3'
+          if marker not in s:
+              patch = r'''<script id="fps-arena-bugfix-v3">
+(function(){
+  const MARK='FPSARENA_BUGFIX_V3';
+  if(window.__FPSARENA_BUGFIX_V3)return;
+  window.__FPSARENA_BUGFIX_V3=true;
+
+  function nrm(v){return String(v||'').toLowerCase()
+    .replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[أإآ]/g,'ا')
+    .replace(/[\u200c\u200f]/g,'').replace(/[\-–—]/g,' ')
+    .replace(/\s+/g,' ').trim();}
+
   window.selectDeviceBySearch=function(){
     const input=document.getElementById('deviceSearch');
     const dev=document.getElementById('device');
-    if(!input||!dev||!window.phoneCatalog)return;
-    const q=String(input.value||'').trim().toLowerCase();
+    if(!input||!dev||typeof phoneCatalog==='undefined')return;
+    const q=nrm(input.value);
     if(!q)return;
-    const norm2=v=>String(v||'').toLowerCase()
-      .replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[أإآ]/g,'ا')
-      .replace(/[؟?!،,.]/g,' ').replace(/\s+/g,' ').trim();
-    const n=norm2(q);
-    let best=-1, bestScore=-1;
-    for(let i=0;i<window.phoneCatalog.length;i++){
-      const x=window.phoneCatalog[i];
-      const name=norm2(x.name), full=norm2(x.name+' '+x.variant+' '+x.chip);
+    let best=-1,bestScore=-1;
+    for(let i=0;i<phoneCatalog.length;i++){
+      const x=phoneCatalog[i];
+      const name=nrm(x.name),full=nrm(x.name+' '+x.variant+' '+x.chip);
       let score=-1;
-      if(full===n)score=1000;
-      else if(name===n)score=950;
-      else if(name.startsWith(n))score=800-n.length;
-      else if(n.length>=3 && name.includes(n))score=650-n.length;
-      else if(n.length>=3 && full.includes(n))score=450-n.length;
+      if(full===q)score=1000;
+      else if(name===q)score=950;
+      else if(name.startsWith(q))score=850-q.length;
+      else if(q.length>=3&&name.includes(q))score=700-q.length;
+      else if(q.length>=3&&full.includes(q))score=500-q.length;
       if(score>bestScore){bestScore=score;best=i;}
     }
-    if(best>=0 && bestScore>0){
+    if(best>=0&&bestScore>0){
       dev.value='phone_'+best;
-      if(typeof window.render==='function')window.render();
+      input.value=phoneCatalog[best].name+' — '+phoneCatalog[best].variant+' — '+String(phoneCatalog[best].chip).toUpperCase();
+      if(typeof render==='function')render();
     }
   };
 
-  // Better keyboard behavior for the device field.
   const ds=document.getElementById('deviceSearch');
   if(ds)ds.addEventListener('keydown',function(e){
-    if(e.key==='Enter'){
-      e.preventDefault();
-      window.selectDeviceBySearch();
-      ds.blur();
-    }
+    if(e.key==='Enter'){e.preventDefault();window.selectDeviceBySearch();ds.blur();}
   });
 
-  // Keep chat usable on small screens and close it with Escape.
+  // Fix initial device/search synchronization.
+  const hidden=document.getElementById('device');
+  if(hidden&&/^phone_\d+$/.test(hidden.value||'')&&ds&&typeof phoneCatalog!=='undefined'){
+    const i=Number(hidden.value.split('_')[1]);
+    if(phoneCatalog[i]){
+      const x=phoneCatalog[i];
+      ds.value=x.name+' — '+x.variant+' — '+String(x.chip).toUpperCase();
+    }
+  }
+
+  // Accessibility and mobile stability.
   document.addEventListener('keydown',function(e){
     if(e.key==='Escape'){
       const chat=document.getElementById('aiChat');
       if(chat)chat.style.display='none';
     }
   });
-
-  // Remove duplicate-looking entries from the 10k-option datalist after startup.
-  // This keeps the visible search list manageable without changing the 10k catalog.
-  const dl=document.getElementById('deviceOptions');
-  if(dl){
-    const seen=new Set();
-    Array.from(dl.options).forEach(o=>{
-      const key=String(o.value||'').toLowerCase();
-      if(seen.has(key))o.remove(); else seen.add(key);
-    });
-  }
-
-  // Fix initial device selection if the hidden selector and search field drift apart.
-  const hidden=document.getElementById('device');
-  if(hidden && /^phone_\d+$/.test(hidden.value||'')){
-    const i=Number(hidden.value.split('_')[1]);
-    if(window.phoneCatalog[i] && ds && !ds.value){
-      const x=window.phoneCatalog[i];
-      ds.value=x.name+' — '+x.variant+' — '+String(x.chip).toUpperCase();
-    }
-  }
-
-  // Make language switching update the document title too.
-  const lang=document.getElementById('lang');
-  if(lang)lang.addEventListener('change',function(){
-    const titles={fa:'FPS ARENA — بازی موبایل',en:'FPS ARENA — Mobile Gaming',zh:'FPS ARENA — 手机游戏',ar:'FPS ARENA — ألعاب الهاتف',tr:'FPS ARENA — Mobil Oyun',es:'FPS ARENA — Juegos Móviles'};
-    document.title=titles[this.value]||titles.en;
-  });
+  const form=document.getElementById('aiForm');
+  const input=document.getElementById('aiInput');
+  if(form&&input)form.addEventListener('submit',function(){input.blur();});
 })();
 </script>'''
-              s=s.replace('</body>', patch+'</body>')
-              p.write_text(s,encoding='utf-8')
+              s=s.replace('</body>',patch+'</body>')
+
+          # Prevent the page from showing a misleading hard-coded 100 when the array changes.
+          s=s.replace('<b id="count">100</b> بازی','<b id="count">0</b> بازی')
+
+          # Add a no-script fallback instead of leaving a blank page if JavaScript is disabled.
+          if '<noscript' not in s:
+              s=s.replace('<body>','<body><noscript><div style="padding:20px;text-align:center">برای استفاده از FPS ARENA باید JavaScript مرورگر فعال باشد.</div></noscript>',1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Validate HTML/JavaScript structure
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          checks={
+            'doctype':s.lower().startswith('<!doctype html>'),
+            'body': '<body' in s and '</body>' in s,
+            'script': '<script' in s and '</script>' in s,
+            'fps_function': bool(re.search(r'function fps\(d,g,r,q\)',s)),
+            'render_function': 'function render()' in s,
+            'chat': 'aiChat' in s,
+          }
+          bad=[k for k,v in checks.items() if not v]
+          if bad: raise SystemExit('Validation failed: '+', '.join(bad))
+          print('FPS ARENA validation passed:', ', '.join(checks))
           PY
 
       - name: Commit repaired site
@@ -114,5 +160,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Repair FPS ARENA site [site-repair]"
+          git diff --cached --quiet || git commit -m "Deep repair FPS ARENA [site-repair]"
           git push
