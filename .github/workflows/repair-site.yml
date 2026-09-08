@@ -1,0 +1,118 @@
+name: Repair FPS ARENA
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ !contains(github.event.head_commit.message, '[site-repair]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply browser bug fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = 'FPSARENA_BUGFIX_V2'
+          if marker not in s:
+              patch = r'''<script id="fps-arena-bugfix-v2">
+(function(){
+  const MARK='FPSARENA_BUGFIX_V2';
+  if(window.__FPSARENA_BUGFIX_V2)return;
+  window.__FPSARENA_BUGFIX_V2=true;
+
+  // Fix: device search was too strict (only exact full-name matches worked).
+  window.selectDeviceBySearch=function(){
+    const input=document.getElementById('deviceSearch');
+    const dev=document.getElementById('device');
+    if(!input||!dev||!window.phoneCatalog)return;
+    const q=String(input.value||'').trim().toLowerCase();
+    if(!q)return;
+    const norm2=v=>String(v||'').toLowerCase()
+      .replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[أإآ]/g,'ا')
+      .replace(/[؟?!،,.]/g,' ').replace(/\s+/g,' ').trim();
+    const n=norm2(q);
+    let best=-1, bestScore=-1;
+    for(let i=0;i<window.phoneCatalog.length;i++){
+      const x=window.phoneCatalog[i];
+      const name=norm2(x.name), full=norm2(x.name+' '+x.variant+' '+x.chip);
+      let score=-1;
+      if(full===n)score=1000;
+      else if(name===n)score=950;
+      else if(name.startsWith(n))score=800-n.length;
+      else if(n.length>=3 && name.includes(n))score=650-n.length;
+      else if(n.length>=3 && full.includes(n))score=450-n.length;
+      if(score>bestScore){bestScore=score;best=i;}
+    }
+    if(best>=0 && bestScore>0){
+      dev.value='phone_'+best;
+      if(typeof window.render==='function')window.render();
+    }
+  };
+
+  // Better keyboard behavior for the device field.
+  const ds=document.getElementById('deviceSearch');
+  if(ds)ds.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){
+      e.preventDefault();
+      window.selectDeviceBySearch();
+      ds.blur();
+    }
+  });
+
+  // Keep chat usable on small screens and close it with Escape.
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){
+      const chat=document.getElementById('aiChat');
+      if(chat)chat.style.display='none';
+    }
+  });
+
+  // Remove duplicate-looking entries from the 10k-option datalist after startup.
+  // This keeps the visible search list manageable without changing the 10k catalog.
+  const dl=document.getElementById('deviceOptions');
+  if(dl){
+    const seen=new Set();
+    Array.from(dl.options).forEach(o=>{
+      const key=String(o.value||'').toLowerCase();
+      if(seen.has(key))o.remove(); else seen.add(key);
+    });
+  }
+
+  // Fix initial device selection if the hidden selector and search field drift apart.
+  const hidden=document.getElementById('device');
+  if(hidden && /^phone_\d+$/.test(hidden.value||'')){
+    const i=Number(hidden.value.split('_')[1]);
+    if(window.phoneCatalog[i] && ds && !ds.value){
+      const x=window.phoneCatalog[i];
+      ds.value=x.name+' — '+x.variant+' — '+String(x.chip).toUpperCase();
+    }
+  }
+
+  // Make language switching update the document title too.
+  const lang=document.getElementById('lang');
+  if(lang)lang.addEventListener('change',function(){
+    const titles={fa:'FPS ARENA — بازی موبایل',en:'FPS ARENA — Mobile Gaming',zh:'FPS ARENA — 手机游戏',ar:'FPS ARENA — ألعاب الهاتف',tr:'FPS ARENA — Mobil Oyun',es:'FPS ARENA — Juegos Móviles'};
+    document.title=titles[this.value]||titles.en;
+  });
+})();
+</script>'''
+              s=s.replace('</body>', patch+'</body>')
+              p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Commit repaired site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Repair FPS ARENA site [site-repair]"
+          git push
