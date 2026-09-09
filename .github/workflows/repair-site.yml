@@ -15,90 +15,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Repair chatbot and restore game layout
+      - name: Restore original site data and layout
         run: |
+          cp "FPS_ARENA_Games_FPS_Improved (4).html" index.html
           python3 - <<'PY'
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-
-          # Restore the original spacing above the game cards so the games sit lower like the original layout.
           s=s.replace('.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:15px;margin-top:20px}', '.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:15px;margin-top:55px}')
-
-          marker='FPSARENA_CHAT_HARDENED_V4'
-          if marker not in s:
-              extra=r'''<script id="fpsarena-chat-hardened">
-          /* FPSARENA_CHAT_HARDENED_V4 */
-          (()=>{
-            const boot=()=>{
-              const panel=document.getElementById('aiChat'), form=document.getElementById('aiForm'), input=document.getElementById('aiInput'), msgs=document.getElementById('aiMsgs');
-              if(!panel||!form||!input||!msgs)return;
-              const open=()=>{panel.style.display='flex';panel.hidden=false;setTimeout(()=>input.focus(),0)};
-              const close=()=>{panel.style.display='none';panel.hidden=true};
-              window.FPSArenaChat={open,close};
-              const add=(text,cls)=>{const d=document.createElement('div');d.className='aiMsg '+cls;d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;return d};
-              const norm=s=>String(s||'').toLowerCase().replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[؟?!،,.]/g,' ').replace(/\\s+/g,' ').trim();
-              const games=window.__fpsArenaGames || [];
-              const phoneNames=['POCO C65','POCO C85','Redmi 13C','Redmi Note 13','Samsung Galaxy A15','Samsung Galaxy S23','iPhone 13','iPhone 15'];
-              const gameAliases={'فری فایر':'Free Fire','پابجی':'PUBG Mobile','کالاف':'Call of Duty: Mobile','کال آف':'Call of Duty: Mobile','ماینکرفت':'Minecraft','گنشین':'Genshin Impact','ای فوتبال':'eFootball','براول':'Brawl Stars','استنداف':'Standoff 2'};
-              const findGame=q=>{const n=norm(q);for(const k in gameAliases)if(n.includes(k))return gameAliases[k];for(const g of games)if(n.includes(norm(g[0])))return g[0];return null};
-              const findPhone=q=>{const n=norm(q);for(const x of phoneNames)if(n.includes(norm(x))||n.includes(norm(x.replace(/^poco |^redmi |^samsung galaxy |^iphone /i,''))))return x;return null};
-              const answer=q=>{
-                const n=norm(q), g=findGame(q), p=findPhone(q);
-                if(/سلام|درود|hello|hi/.test(n))return 'سلام 👋 اسم گوشی و بازی را بگو تا FPS تخمینی بدهم.';
-                if(g&&p)return `📱 ${p} + 🎮 ${g}\nFPS تخمینی را از اطلاعات سایت حساب کن؛ دقت واقعی به نسخه بازی، دما و تنظیمات گرافیکی هم بستگی دارد.`;
-                if(g)return `🎮 بازی پیدا شد: ${g}\nحالا اسم گوشی را هم بفرست؛ مثلاً «POCO C65 فری فایر چند FPS؟»`;
-                if(p)return `📱 گوشی پیدا شد: ${p}\nاسم بازی را هم بگو تا تحلیلش کنم.`;
-                if(/مقایسه|فرق/.test(n))return 'دو نام گوشی را در یک پیام بنویس؛ مثلاً «POCO C65 و Redmi 13C».';
-                if(/کیفیت|گرافیک|fps بیشتر|روان/.test(n))return 'برای FPS بالاتر معمولاً Low یا Medium مناسب‌تر است؛ High و Ultra فشار بیشتری ایجاد می‌کنند.';
-                if(/رم|ram/.test(n))return 'RAM بیشتر بیشتر روی چندوظیفگی و پایداری اثر دارد؛ توان چیپست و GPU عامل مهم‌تری برای FPS هستند.';
-                return 'پیامت را گرفتم 😎 اسم گوشی + بازی را بنویس تا دقیق‌تر راهنمایی کنم.';
-              };
-              document.addEventListener('click',e=>{
-                const b=e.target.closest('#aiChatBtn'); if(b){e.preventDefault();e.stopImmediatePropagation();open();return;}
-                const c=e.target.closest('#aiClose'); if(c){e.preventDefault();e.stopImmediatePropagation();close();return;}
-                const q=e.target.closest('.aiQuick button'); if(q){e.preventDefault();e.stopImmediatePropagation();open();input.value=q.dataset.q||'';form.requestSubmit();}
-              },true);
-              document.addEventListener('submit',e=>{
-                if(e.target!==form)return;
-                e.preventDefault();e.stopImmediatePropagation();open();
-                const q=input.value.trim();if(!q)return;
-                add(q,'aiUser');input.value='';
-                const t=add('در حال تحلیل…','aiBot aiTyping');
-                setTimeout(()=>{t.remove();try{add(answer(q),'aiBot')}catch(err){add('یک خطای داخلی رخ داد؛ دوباره پیام را بفرست.','aiBot')}open()},180);
-              },true);
-              window.addEventListener('error',e=>{if(panel&&document.activeElement===input)open()});
-            };
-            if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-          })();
-          </script>'''
-              s=s.replace('</body>',extra+'\n</body>')
           p.write_text(s,encoding='utf-8')
           PY
 
-      - name: Validate
+      - name: Validate restored site
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           s=Path('index.html').read_text(encoding='utf-8')
           checks=[
             ('doctype',s.lower().startswith('<!doctype html>')),
             ('body','<body' in s and '</body>' in s),
-            ('chat button','id="aiChatBtn"' in s),
-            ('chat panel','id="aiChat"' in s),
-            ('chat form','id="aiForm"' in s),
-            ('hardened','FPSARENA_CHAT_HARDENED_V4' in s),
+            ('game search','id="search"' in s),
+            ('phone search','id="deviceSearch"' in s),
+            ('phone catalog','const phoneCatalog=[]' in s),
+            ('10000 configs','phoneCatalog.length<10000' in s),
+            ('games array','const games=[' in s),
+            ('100 games label','id="count">100</b> بازی' in s),
             ('games spacing','margin-top:55px' in s),
           ]
           bad=[k for k,v in checks if not v]
           if bad: raise SystemExit('Validation failed: '+', '.join(bad))
-          print('FPS ARENA validation passed')
+          m=re.search(r'const games=\[(.*?)\];',s,re.S)
+          if not m: raise SystemExit('Games array missing')
+          game_count=len(re.findall(r"\['",m.group(1)))
+          if game_count != 100: raise SystemExit(f'Expected 100 games, found {game_count}')
+          print('FPS ARENA restored: 100 games + 10,000 phone/config entries')
           PY
 
-      - name: Commit repaired site
+      - name: Commit restored site
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Restore game list position [site-repair]"
+          git diff --cached --quiet || git commit -m "Restore original games and phone catalog [site-repair]"
           git push
