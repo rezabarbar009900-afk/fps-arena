@@ -1,4 +1,4 @@
-name: Restore Smart Bot and BB Chat Promo
+name: Install Real AI Chatbot and BB Chat Promo
 on:
   push:
     branches: [main]
@@ -9,36 +9,160 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Restore bot and add promo
+      - name: Patch site
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import subprocess, re
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-          smart_sha='f0e3c190fc7ddbefe4559df44085c3b8e10591a9'
-          if 'fpsArenaSmartBtn' not in s:
-              s=subprocess.check_output(['git','show',smart_sha+':index.html'], text=True)
-          css='''
-          <style id="telegramPromoStyle">#telegramPromo{max-width:1180px;margin:0 auto 28px;padding:0 20px}#telegramPromo .tgCard{position:relative;overflow:hidden;border:1px solid #6e4cff;border-radius:22px;padding:28px 26px;background:linear-gradient(135deg,#15102b,#0d1724 55%,#111022);box-shadow:0 18px 55px #0008;text-align:center;cursor:pointer;transition:.2s}#telegramPromo .tgCard:hover{transform:translateY(-3px);box-shadow:0 22px 65px #000b}#telegramPromo .tgGlow{position:absolute;width:180px;height:180px;border-radius:50%;background:#7c4dff33;filter:blur(35px);right:-45px;top:-65px}#telegramPromo h2{position:relative;margin:0 0 10px;font-size:clamp(24px,4vw,38px);color:#fff}#telegramPromo p{position:relative;color:#b9bfd0;margin:0 auto;max-width:720px;line-height:1.8}@media(max-width:520px){#telegramPromo{padding:0 12px}.tgCard{padding:24px 16px!important}}</style>'''
-          html='''
+          import re
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Remove previous injected cloud-AI block if present.
+          s = re.sub(r'<!-- FPS_ARENA_REAL_AI_START -->.*?<!-- FPS_ARENA_REAL_AI_END -->\s*', '', s, flags=re.S)
+
+          # Remove old Telegram promo so the corrected one is always used.
+          s = re.sub(r'<style id="telegramPromoStyle">.*?</style>\s*', '', s, flags=re.S)
+          s = re.sub(r'<section id="telegramPromo".*?</section>\s*', '', s, flags=re.S)
+
+          promo = r'''
+          <style id="telegramPromoStyle">
+          #telegramPromo{max-width:1180px;margin:0 auto 28px;padding:0 20px}
+          #telegramPromo .tgCard{position:relative;overflow:hidden;border:1px solid #6e4cff;border-radius:22px;padding:28px 26px;background:linear-gradient(135deg,#15102b,#0d1724 55%,#111022);box-shadow:0 18px 55px #0008;text-align:center;cursor:pointer;transition:.2s}
+          #telegramPromo .tgCard:hover{transform:translateY(-3px);box-shadow:0 22px 65px #000b}
+          #telegramPromo .tgGlow{position:absolute;width:180px;height:180px;border-radius:50%;background:#7c4dff33;filter:blur(35px);right:-45px;top:-65px}
+          #telegramPromo h2{position:relative;margin:0 0 10px;font-size:clamp(24px,4vw,38px);color:#fff}
+          #telegramPromo p{position:relative;color:#b9bfd0;margin:0 auto;max-width:720px;line-height:1.8}
+          @media(max-width:520px){#telegramPromo{padding:0 12px}.tgCard{padding:24px 16px!important}}
+          </style>
           <section id="telegramPromo" aria-label="BB Chat">
             <a href="https://t.me/BB_chat666" target="_blank" rel="noopener noreferrer" style="display:block;text-decoration:none;color:inherit">
               <div class="tgCard"><div class="tgGlow"></div><h2>🌍🔥 BB Chat</h2><p>💬 یک دورهمی دوستانه برای چت و آشنایی با آدم‌های مختلف از سراسر دنیا!</p></div>
             </a>
           </section>
           '''
-          s=re.sub(r'<style id="telegramPromoStyle">.*?</style>\s*','',s,flags=re.S)
-          s=re.sub(r'<section id="telegramPromo".*?</section>\s*','',s,flags=re.S)
-          marker='<main class="wrap">'
-          s=s.replace(marker,css+html+marker,1) if marker in s else s.replace('</body>',css+html+'</body>',1)
-          p.write_text(s,encoding='utf-8')
+
+          marker = '<main class="wrap">'
+          if marker in s:
+              s = s.replace(marker, promo + marker, 1)
+          else:
+              s = s.replace('</body>', promo + '</body>', 1)
+
+          ai = r'''
+          <!-- FPS_ARENA_REAL_AI_START -->
+          <script src="https://js.puter.com/v2/"></script>
+          <style id="fpsArenaRealAIStyle">
+          #fpsArenaAIBtn{position:fixed;right:18px;bottom:18px;z-index:2147483000;border:0;border-radius:999px;padding:14px 18px;background:linear-gradient(135deg,#744cff,#22d8e8);color:#fff;font-weight:900;font-size:15px;cursor:pointer;box-shadow:0 14px 45px #0009;direction:rtl}
+          #fpsArenaAIBtn:hover{transform:translateY(-2px)}
+          #fpsArenaAIBox{position:fixed;right:18px;bottom:78px;width:min(410px,calc(100vw - 24px));height:min(620px,calc(100vh - 105px));z-index:2147482999;background:#0b0e17;border:1px solid #343b55;border-radius:22px;box-shadow:0 24px 80px #000d;display:none;overflow:hidden;direction:rtl}
+          #fpsArenaAIBox.open{display:flex;flex-direction:column}
+          #fpsArenaAIHead{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;background:linear-gradient(135deg,#17122d,#0b1b25);border-bottom:1px solid #2b3145}
+          #fpsArenaAIHead strong{font-size:16px}.fpsArenaAIBadge{font-size:11px;color:#7df9ff;border:1px solid #2f8190;border-radius:99px;padding:4px 8px;margin-right:6px}
+          #fpsArenaAIClose{border:0;background:#171b28;color:#fff;width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:18px}
+          #fpsArenaAIMsgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+          .fpsArenaAIMsg{max-width:86%;padding:11px 13px;border-radius:15px;line-height:1.75;white-space:pre-wrap;word-break:break-word;font-size:14px}
+          .fpsArenaAIMsg.user{align-self:flex-start;background:#6848dc;color:#fff;border-bottom-left-radius:5px}
+          .fpsArenaAIMsg.bot{align-self:flex-end;background:#151a27;color:#eef2ff;border:1px solid #293149;border-bottom-right-radius:5px}
+          .fpsArenaAIMsg.thinking{color:#9aa5be;font-style:italic}
+          #fpsArenaAIQuick{display:flex;gap:7px;overflow:auto;padding:0 12px 9px}
+          #fpsArenaAIQuick button{flex:0 0 auto;border:1px solid #313b55;background:#121827;color:#cbd4e8;border-radius:99px;padding:7px 10px;cursor:pointer;font-size:12px}
+          #fpsArenaAIForm{display:flex;gap:8px;padding:11px;border-top:1px solid #262d40;background:#0d111b}
+          #fpsArenaAIInput{flex:1;min-width:0;background:#111725;color:#fff;border:1px solid #303a55;border-radius:12px;padding:12px;outline:none;font:inherit}
+          #fpsArenaAISend{border:0;border-radius:12px;padding:0 15px;background:linear-gradient(135deg,#725cff,#28cfe0);color:#fff;font-weight:900;cursor:pointer}
+          #fpsArenaAISend:disabled{opacity:.55;cursor:not-allowed}
+          @media(max-width:520px){#fpsArenaAIBtn{right:12px;bottom:12px}#fpsArenaAIBox{right:6px;bottom:68px;width:calc(100vw - 12px);height:calc(100vh - 82px);border-radius:18px}}
+          </style>
+
+          <button id="fpsArenaAIBtn" type="button">🤖 هوش مصنوعی</button>
+          <section id="fpsArenaAIBox" aria-label="FPS ARENA AI">
+            <div id="fpsArenaAIHead"><div><strong>🤖 FPS ARENA AI</strong><span class="fpsArenaAIBadge">GPT-5.6</span></div><button id="fpsArenaAIClose" type="button" aria-label="بستن">×</button></div>
+            <div id="fpsArenaAIMsgs"></div>
+            <div id="fpsArenaAIQuick"><button type="button">FPS فری فایر روی POCO C65</button><button type="button">POCO C65 یا Redmi 13C؟</button><button type="button">بهترین تنظیم برای بازی</button></div>
+            <form id="fpsArenaAIForm"><input id="fpsArenaAIInput" autocomplete="off" placeholder="هرچی درباره گوشی، بازی و FPS می‌خوای بپرس…"><button id="fpsArenaAISend" type="submit">ارسال</button></form>
+          </section>
+
+          <script>
+          (()=>{
+            const btn=document.getElementById('fpsArenaAIBtn');
+            const box=document.getElementById('fpsArenaAIBox');
+            const close=document.getElementById('fpsArenaAIClose');
+            const msgs=document.getElementById('fpsArenaAIMsgs');
+            const form=document.getElementById('fpsArenaAIForm');
+            const input=document.getElementById('fpsArenaAIInput');
+            const send=document.getElementById('fpsArenaAISend');
+            const history=[];
+
+            const add=(text,who='bot',extra='')=>{
+              const d=document.createElement('div');
+              d.className='fpsArenaAIMsg '+who+(extra?' '+extra:'');
+              d.textContent=text;
+              msgs.appendChild(d);
+              msgs.scrollTop=msgs.scrollHeight;
+              return d;
+            };
+
+            const open=()=>{box.classList.add('open');setTimeout(()=>input.focus(),50)};
+            btn.addEventListener('click',()=>{box.classList.toggle('open');if(box.classList.contains('open')) input.focus()});
+            close.addEventListener('click',()=>box.classList.remove('open'));
+
+            function siteContext(){
+              const phone=document.getElementById('deviceSearch')?.value?.trim()||'انتخاب نشده';
+              const ram=document.getElementById('ram')?.value||'نامشخص';
+              const quality=document.getElementById('quality')?.value||'نامشخص';
+              let gameNames='';
+              let phoneNames='';
+              try{ if(typeof games!=='undefined') gameNames=games.map(g=>g[0]).join(', '); }catch(e){}
+              try{ if(typeof phoneSeeds!=='undefined') phoneNames=phoneSeeds.map(p=>p[0]).join(', '); }catch(e){}
+              return `وضعیت فعلی سایت: گوشی=${phone} | RAM=${ram}GB | کیفیت=${quality}.\nبازی‌های دیتابیس سایت: ${gameNames}.\nمدل‌های پایه گوشی در دیتابیس: ${phoneNames}.\nFPSهای سایت تخمینی هستند و بنچمارک واقعی محسوب نمی‌شوند.`;
+            }
+
+            function extractText(r){
+              if(typeof r==='string') return r;
+              if(r?.message?.content){
+                if(typeof r.message.content==='string') return r.message.content;
+                if(Array.isArray(r.message.content)) return r.message.content.map(x=>x?.text||x?.content||'').join('');
+              }
+              if(r?.text) return r.text;
+              return String(r??'');
+            }
+
+            async function ask(q){
+              const text=q.trim(); if(!text) return;
+              add(text,'user');
+              history.push({role:'user',content:text});
+              input.value=''; send.disabled=true;
+              const wait=add('در حال فکر کردن…','bot','thinking');
+              try{
+                if(!window.puter?.ai?.chat) throw new Error('AI library not loaded');
+                const sys=`تو دستیار اصلی سایت FPS ARENA هستی. فارسی را کاملاً روان و خودمانی جواب بده مگر کاربر زبان دیگری بخواهد. در گوشی‌ها، چیپست‌ها، بازی‌های موبایل، تنظیمات گرافیکی و FPS متخصص باش. پاسخ‌ها کاربردی، دقیق و نسبتاً کوتاه باشند. وقتی درباره FPS سؤال می‌شود بین تخمین دیتابیس سایت و بنچمارک واقعی تفاوت بگذار و عدد قطعیِ ساختگی نده. اگر اطلاعات سایت کافی نیست صریح بگو. ${siteContext()}`;
+                const messages=[{role:'system',content:sys},...history.slice(-12)];
+                const res=await puter.ai.chat(messages,{model:'gpt-5.6-luna'});
+                const answer=extractText(res).trim()||'پاسخی دریافت نشد. دوباره امتحان کن.';
+                wait.remove(); add(answer,'bot');
+                history.push({role:'assistant',content:answer});
+              }catch(err){
+                wait.remove();
+                add('برای استفاده از هوش مصنوعی آنلاین ممکن است پنجره ورود Puter باز شود. اگر باز نشد، یک‌بار صفحه را رفرش کن و دوباره پیام بده.','bot');
+                console.error('FPS ARENA AI:',err);
+              }finally{send.disabled=false;input.focus()}
+            }
+
+            form.addEventListener('submit',e=>{e.preventDefault();ask(input.value)});
+            document.querySelectorAll('#fpsArenaAIQuick button').forEach(b=>b.addEventListener('click',()=>{open();ask(b.textContent)}));
+            add('سلام 👋 من هوش مصنوعی واقعی FPS ARENA هستم. درباره گوشی، بازی، FPS، مقایسه مدل‌ها و تنظیمات گیم ازم بپرس.','bot');
+          })();
+          </script>
+          <!-- FPS_ARENA_REAL_AI_END -->
+          '''
+
+          s = s.replace('</body>', ai + '\n</body>', 1)
+          p.write_text(s, encoding='utf-8')
           PY
       - name: Validate
         run: |
-          grep -q 'fpsArenaSmartBtn' index.html
+          grep -q 'id="fpsArenaAIBtn"' index.html
+          grep -q 'https://js.puter.com/v2/' index.html
+          grep -q "model:'gpt-5.6-luna'" index.html
           grep -q 'id="telegramPromo"' index.html
           grep -q 'BB Chat' index.html
           ! grep -q 'آیدی گروه: 666' index.html
@@ -47,4 +171,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || (git commit -m "Restore smart chatbot and add BB Chat promo" && git push)
+          git diff --cached --quiet || (git commit -m "Install real GPT-5.6 AI chatbot and BB Chat promo" && git push)
