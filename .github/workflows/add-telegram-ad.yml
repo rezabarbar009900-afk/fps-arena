@@ -1,4 +1,4 @@
-name: Add Telegram Promo
+name: Restore Smart Bot and BB Chat Promo
 on:
   push:
     branches: [main]
@@ -9,43 +9,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fix promo
+        with:
+          fetch-depth: 0
+      - name: Restore bot and add promo
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
+          import subprocess, re
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-
+          smart_sha='f0e3c190fc7ddbefe4559df44085c3b8e10591a9'
+          if 'fpsArenaSmartBtn' not in s:
+              s=subprocess.check_output(['git','show',smart_sha+':index.html'], text=True)
           css='''
-<style id="telegramPromoStyle">#telegramPromo{max-width:1180px;margin:0 auto 28px;padding:0 20px}#telegramPromo .tgLink{display:block;text-decoration:none;color:inherit}#telegramPromo .tgCard{position:relative;overflow:hidden;border:1px solid #6e4cff;border-radius:22px;padding:28px 26px;background:linear-gradient(135deg,#15102b,#0d1724 55%,#111022);box-shadow:0 18px 55px #0008;text-align:center;cursor:pointer;transition:.2s}#telegramPromo .tgCard:hover{transform:translateY(-3px);border-color:#8b7bff}#telegramPromo .tgGlow{position:absolute;width:180px;height:180px;border-radius:50%;background:#7c4dff33;filter:blur(35px);right:-45px;top:-65px}#telegramPromo h2{position:relative;margin:0 0 10px;font-size:clamp(24px,4vw,38px);color:#fff}#telegramPromo p{position:relative;color:#b9bfd0;margin:0 auto;max-width:720px;line-height:1.8}@media(max-width:520px){#telegramPromo{padding:0 12px}#telegramPromo .tgCard{padding:24px 16px}}
-</style>'''
+          <style id="telegramPromoStyle">#telegramPromo{max-width:1180px;margin:0 auto 28px;padding:0 20px}#telegramPromo .tgCard{position:relative;overflow:hidden;border:1px solid #6e4cff;border-radius:22px;padding:28px 26px;background:linear-gradient(135deg,#15102b,#0d1724 55%,#111022);box-shadow:0 18px 55px #0008;text-align:center;cursor:pointer;transition:.2s}#telegramPromo .tgCard:hover{transform:translateY(-3px);box-shadow:0 22px 65px #000b}#telegramPromo .tgGlow{position:absolute;width:180px;height:180px;border-radius:50%;background:#7c4dff33;filter:blur(35px);right:-45px;top:-65px}#telegramPromo h2{position:relative;margin:0 0 10px;font-size:clamp(24px,4vw,38px);color:#fff}#telegramPromo p{position:relative;color:#b9bfd0;margin:0 auto;max-width:720px;line-height:1.8}@media(max-width:520px){#telegramPromo{padding:0 12px}.tgCard{padding:24px 16px!important}}</style>'''
           html='''
-<section id="telegramPromo" aria-label="BB Chat">
-  <a class="tgLink" href="https://t.me/BB_chat666" target="_blank" rel="noopener noreferrer">
-    <div class="tgCard">
-      <div class="tgGlow"></div>
-      <h2>🌍🔥 BB Chat</h2>
-      <p>💬 یک دورهمی دوستانه برای چت و آشنایی با آدم‌های مختلف از سراسر دنیا!</p>
-    </div>
-  </a>
-</section>
-'''
-
-          # Remove any previous Telegram promo and its old styling.
-          s=re.sub(r'<style id="telegramPromoStyle">.*?</style>\s*', '', s, count=1, flags=re.S)
-          s=re.sub(r'<section id="telegramPromo".*?</section>\s*', '', s, count=1, flags=re.S)
-
+          <section id="telegramPromo" aria-label="BB Chat">
+            <a href="https://t.me/BB_chat666" target="_blank" rel="noopener noreferrer" style="display:block;text-decoration:none;color:inherit">
+              <div class="tgCard"><div class="tgGlow"></div><h2>🌍🔥 BB Chat</h2><p>💬 یک دورهمی دوستانه برای چت و آشنایی با آدم‌های مختلف از سراسر دنیا!</p></div>
+            </a>
+          </section>
+          '''
+          s=re.sub(r'<style id="telegramPromoStyle">.*?</style>\s*','',s,flags=re.S)
+          s=re.sub(r'<section id="telegramPromo".*?</section>\s*','',s,flags=re.S)
           marker='<main class="wrap">'
-          if marker in s:
-              s=s.replace(marker, css+html+marker, 1)
-          else:
-              s=s.replace('</body>', css+html+'</body>', 1)
+          s=s.replace(marker,css+html+marker,1) if marker in s else s.replace('</body>',css+html+'</body>',1)
           p.write_text(s,encoding='utf-8')
           PY
+      - name: Validate
+        run: |
+          grep -q 'fpsArenaSmartBtn' index.html
+          grep -q 'id="telegramPromo"' index.html
+          grep -q 'BB Chat' index.html
+          ! grep -q 'آیدی گروه: 666' index.html
       - name: Commit patch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || (git commit -m "Fix BB Chat promo display" && git push)
+          git diff --cached --quiet || (git commit -m "Restore smart chatbot and add BB Chat promo" && git push)
