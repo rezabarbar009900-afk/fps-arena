@@ -1,0 +1,108 @@
+name: Upgrade AI assistant
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upgrade chatbot
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          start=s.find('<script>\nconst aiBtn=')
+          if start<0: start=s.find('<script>\r\nconst aiBtn=')
+          if start<0: raise SystemExit('old chatbot script not found')
+          end=s.find('</script>', start)
+          if end<0: raise SystemExit('chatbot script end not found')
+          new=r'''<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const aiBtn=$('aiChatBtn'), chat=$('aiChat'), close=$('aiClose'), msgs=$('aiMsgs'), form=$('aiForm'), input=$('aiInput');
+  if(!aiBtn||!chat||!close||!msgs||!form||!input)return;
+  const norm=v=>String(v||'').toLowerCase().replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/[ۀة]/g,'ه').replace(/‌/g,' ').replace(/\s+/g,' ').trim();
+  const esc=v=>String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const games=window.__fpsArenaGames||[];
+  const phones=window.__fpsArenaPhones||[];
+  const aliases={
+    'فری فایر':'Free Fire','فری فایر مکس':'Free Fire','freefire':'Free Fire','ff':'Free Fire',
+    'کالاف':'Call of Duty: Mobile','کال اف دیوتی':'Call of Duty: Mobile','cod':'Call of Duty: Mobile',
+    'پابجی':'PUBG Mobile','pubg':'PUBG Mobile','ماینکرفت':'Minecraft','minecraft':'Minecraft',
+    'گنشین':'Genshin Impact','براول':'Brawl Stars','efootball':'eFootball','ای فوتبال':'eFootball',
+    'فورتنایت':'Fortnite','فورت نایت':'Fortnite','رابلوکس':'Roblox','روبلاکس':'Roblox'
+  };
+  function add(text,user){const d=document.createElement('div');d.className='aiMsg '+(user?'aiUser':'aiBot');d.textContent=text;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;}
+  function open(){chat.style.display='flex';setTimeout(()=>input.focus(),20)}
+  aiBtn.onclick=()=>{if(chat.style.display==='flex')chat.style.display='none';else open()}; close.onclick=()=>chat.style.display='none';
+  function gameFind(q){let n=norm(q);for(const k in aliases)if(n.includes(k))return aliases[k];let best=null,score=0;for(const g of games){let gn=norm(g[0]);if(n.includes(gn)&&gn.length>score){best=g[0];score=gn.length}}return best}
+  function phoneFind(q){let n=norm(q),best=null,score=0;for(const p of phones){let pn=norm(p.name);if(n.includes(pn)&&pn.length>score){best=p;score=pn.length}}return best}
+  function current(){let d=$('device')?.value||'phone_0',i=Number(String(d).replace('phone_',''));return phones[i]||phones.find(p=>norm($('deviceSearch')?.value).includes(norm(p.name)))||phones[0]}
+  function selectPhone(p){if(!p)return;let ds=$('deviceSearch');if(ds){ds.value=p.name+' — '+p.variant+' — '+String(p.chip).toUpperCase();if(typeof selectDeviceBySearch==='function')selectDeviceBySearch()} }
+  function selectGame(g){let s=$('search');if(s){s.value=g;if(typeof render==='function')render()}}
+  function selectedFPS(g){let card=[...document.querySelectorAll('.game')].find(x=>norm(x.querySelector('h3')?.textContent)===norm(g));return card?.querySelector('.fps')?.textContent||'نامشخص'}
+  function answer(q){
+    const n=norm(q), p=phoneFind(q)||current(), g=gameFind(q);
+    if(/^(سلام|درود|hello|hi|hey)\b/.test(n))return 'سلام 😎 من دستیار هوشمند FPS ARENA هستم. اسم گوشی و بازی‌ات را بگو تا دقیق‌تر راهنمایی کنم.';
+    if(/کمک|help|چه کار/.test(n))return 'می‌تونم FPS تخمینی را بررسی کنم، گوشی‌ها را مقایسه کنم، RAM و کیفیت را توضیح بدهم و بازی مناسب برای گوشی‌ات پیشنهاد کنم. مثال: «POCO C65 برای Free Fire چطوره؟»';
+    if(/مقایسه|بهتره|بهتر است|فرق|vs|در برابر/.test(n)){
+      const hits=phones.filter(x=>n.includes(norm(x.name))).slice(0,2);
+      if(hits.length<2)return 'برای مقایسه، نام هر دو گوشی را در یک پیام بنویس؛ مثلاً «POCO C65 با Redmi 13C مقایسه کن». ';
+      const a=hits[0],b=hits[1],pa=Number(power[a.chip]??1.5),pb=Number(power[b.chip]??1.5);
+      return '📱 '+a.name+' ('+String(a.chip).toUpperCase()+')\n📱 '+b.name+' ('+String(b.chip).toUpperCase()+')\n\n⚡ بر اساس امتیاز پردازنده داخل دیتابیس سایت: '+(pa>pb?a.name:pb>pa?b.name:'تقریباً برابر')+' قوی‌تر است.\n\nاین مقایسه بر پایه مدل چیپست سایت است و بنچمارک واقعی نیست.';
+    }
+    if(/رم|ram/.test(n)){
+      const m=n.match(/(?:ram|رم)\s*(4|6|8|12|16)/); if(m&&$('ram')){$('ram').value=m[1];if(typeof render==='function')render();}
+      return 'RAM فقط یکی از عوامل است. چیپست، کیفیت گرافیک، بهینه‌سازی بازی و دمای گوشی هم روی FPS اثر دارند. RAM فعلی سایت: '+($('ram')?.value||8)+'GB.';
+    }
+    if(/کیفیت|گرافیک|quality|low|medium|high|ultra/.test(n)){
+      const qv=/ultra|خیلی بالا/.test(n)?'ultra':/high|بالا/.test(n)?'high':/low|پایین/.test(n)?'low':'medium';if($('quality')){$('quality').value=qv;if(typeof render==='function')render()}
+      return 'کیفیت روی '+qv.toUpperCase()+' تنظیم شد. کیفیت پایین‌تر معمولاً فشار GPU را کمتر می‌کند و می‌تواند FPS را بهتر کند.';
+    }
+    if(/fps|فریم|فریم ریت|چند فریم/.test(n)){
+      if(p)selectPhone(p); if(g){selectGame(g);return '📱 '+p.name+'\n🎮 '+g+'\n⚡ FPS فعلی سایت: '+selectedFPS(g)+'\n\n⚠️ این عدد تخمینی است و دما، نسخه بازی و تنظیمات واقعی می‌توانند نتیجه را تغییر دهند.'}
+      return 'برای محاسبه، اسم بازی را هم بنویس؛ مثلاً «POCO C65 فری فایر چند FPS؟»';
+    }
+    if(/گوشی|phone|موبایل|پردازنده|چیپست/.test(n)){
+      if(p)selectPhone(p);
+      return '📱 گوشی فعلی: '+(p?.name||'نامشخص')+'\n⚙️ چیپست: '+(p?.chip||'نامشخص')+'\n💾 برای نتیجه بهتر، بازی و RAM را هم مشخص کن.';
+    }
+    if(/بازی|game|گیم/.test(n)&&!g)return 'اسم بازی را بگو؛ مثلاً Free Fire، PUBG Mobile، Call of Duty: Mobile یا Minecraft.';
+    if(g){selectGame(g);return '🎮 بازی پیدا شد: '+g+'\nاگر اسم گوشی را هم بفرستی، FPS تخمینی را برای همان گوشی می‌گویم.'}
+    if(p){selectPhone(p);return '📱 '+p.name+' را پیدا کردم. حالا اسم بازی را بفرست تا FPS تخمینی را بررسی کنم.'}
+    return 'متوجه شدم، ولی برای جواب دقیق‌تر اسم گوشی یا بازی را هم بگو. 😊';
+  }
+  form.onsubmit=e=>{e.preventDefault();const q=input.value.trim();if(!q)return;add(q,true);input.value='';open();setTimeout(()=>{try{add(answer(q))}catch(err){add('یک خطای موقت رخ داد؛ دوباره سؤال را بفرست.')}open()},180)};
+  if(!window.__fpsArenaPhones){window.__fpsArenaPhones=[]}
+  window.__fpsArenaPhones=window.__fpsArenaPhones.length?window.__fpsArenaPhones:phones;
+  const power=window.power||{};
+})();
+</script>'''
+          s=s[:start]+new+s[end+9:]
+          marker="window.__fpsArenaPhones=phoneCatalog;"
+          if marker not in s:
+            needle="const deviceEl=document.getElementById('device')"
+            s=s.replace(needle,marker+"\n"+needle,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          for x in ['const games=[','const phoneSeeds=[','const phoneCatalog=[]','window.__fpsArenaGames=games;','window.__fpsArenaPhones=phoneCatalog;','id="aiChatBtn"','function answer(q)','id="games"','id="deviceSearch"']:
+            assert x in s, x
+          print('AI assistant validation OK')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || (git commit -m 'Make FPS ARENA chatbot smarter' && git push)
