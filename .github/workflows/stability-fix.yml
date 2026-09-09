@@ -1,0 +1,71 @@
+name: FPS ARENA Stability Fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix site bugs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          # Remove accidental duplicate legacy chatbot blocks, but keep the current REAL AI block.
+          s=re.sub(r'<!--\s*FPS_ARENA_SMART_BOT_START\s*-->.*?<!--\s*FPS_ARENA_SMART_BOT_END\s*-->\s*','',s,flags=re.S|re.I)
+          s=re.sub(r'<style[^>]*id=["\']aiChatStyle["\'][^>]*>.*?</style>\s*','',s,flags=re.S|re.I)
+          s=re.sub(r'<button[^>]*id=["\']aiChatBtn["\'][^>]*>.*?</button>\s*','',s,flags=re.S|re.I)
+          s=re.sub(r'<section[^>]*id=["\']aiChat["\'][^>]*>.*?</section>\s*','',s,flags=re.S|re.I)
+
+          # Clean duplicate CSS declarations created by earlier patches.
+          s=re.sub(r'(\.games\{[^}]*?)margin-top:55px;\s*margin-top:55px;',r'\1margin-top:55px;',s)
+
+          # Use the documented OpenAI model identifier and normalized responses.
+          s=s.replace('model:\'gpt-5.6-luna\'', 'model:\'openai/gpt-5.6-luna\'')
+          s=s.replace('model:"gpt-5.6-luna"', 'model:"openai/gpt-5.6-luna"')
+          s=s.replace("{model:'openai/gpt-5.6-luna'}", "{model:'openai/gpt-5.6-luna',normalize:true,reasoning_effort:'medium'}")
+          s=s.replace('{model:"openai/gpt-5.6-luna"}', '{model:"openai/gpt-5.6-luna",normalize:true,reasoning_effort:"medium"}')
+
+          # Make the AI fail gracefully if its provider is temporarily unavailable.
+          if 'window.__fpsArenaStabilityFix' not in s:
+              fix=r'''<script id="fpsArenaStabilityFix">
+          (()=>{
+            window.__fpsArenaStabilityFix=true;
+            window.addEventListener('error',e=>console.warn('FPS ARENA handled error:',e.message));
+            window.addEventListener('unhandledrejection',e=>{console.warn('FPS ARENA handled promise error:',e.reason);e.preventDefault()});
+            document.addEventListener('keydown',e=>{
+              if(e.key==='Escape'){
+                document.querySelectorAll('#fpsArenaAIBox.open').forEach(x=>x.classList.remove('open'));
+              }
+            });
+          })();
+          </script>
+          '''
+              s=s.replace('</body>',fix+'</body>',1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validate
+        run: |
+          grep -q 'const games=' index.html
+          grep -q 'const phoneSeeds=' index.html
+          grep -q 'id="games"' index.html
+          grep -q 'id="deviceSearch"' index.html
+          grep -q 'id="telegramPromo"' index.html
+          grep -q 'BB Chat' index.html
+          grep -q 'id="fpsArenaAIBtn"' index.html
+          grep -q 'https://js.puter.com/v2/' index.html
+          grep -q 'openai/gpt-5.6-luna' index.html
+          ! grep -q 'آیدی گروه: 666' index.html
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || (git commit -m "Fix FPS ARENA chatbot and site stability bugs" && git push)
