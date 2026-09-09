@@ -1,83 +1,9 @@
-name: Fix chatbot
+name: Legacy chatbot fixer (disabled)
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
-permissions:
-  contents: write
 jobs:
-  fix:
+  disabled:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Replace chatbot runtime
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path('index.html')
-          s=p.read_text(encoding='utf-8')
-          start=s.find('<script>(()=>{const boot=()=>{')
-          if start<0:
-              raise SystemExit('chatbot runtime not found')
-          end=s.find('</script>', start)
-          if end<0:
-              raise SystemExit('chatbot runtime end not found')
-          new='''<script>
-          (()=>{
-            const $=id=>document.getElementById(id);
-            const btn=$('aiChatBtn'), chat=$('aiChat'), close=$('aiClose'), form=$('aiForm'), input=$('aiInput'), msgs=$('aiMsgs');
-            if(!btn||!chat||!close||!form||!input||!msgs)return;
-            const norm=x=>String(x||'').toLowerCase().replace(/[يى]/g,'ی').replace(/ك/g,'ک').replace(/‌/g,' ').replace(/\\s+/g,' ').trim();
-            const games=window.__fpsArenaGames||[];
-            const phones=window.__fpsArenaPhones||[];
-            const aliases={'فری فایر':'Free Fire','فری فایر مکس':'Free Fire','freefire':'Free Fire','ff':'Free Fire','کالاف':'Call of Duty: Mobile','کال اف دیوتی':'Call of Duty: Mobile','cod':'Call of Duty: Mobile','پابجی':'PUBG Mobile','pubg':'PUBG Mobile','ماینکرفت':'Minecraft','گنشین':'Genshin Impact','براول':'Brawl Stars','ای فوتبال':'eFootball','فورتنایت':'Fortnite','رابلوکس':'Roblox'};
-            const add=(t,u=false)=>{const d=document.createElement('div');d.className='am '+(u?'au':'ab');d.textContent=t;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight};
-            const open=()=>{chat.style.display='flex';setTimeout(()=>input.focus(),30)};
-            const closeChat=()=>chat.style.display='none';
-            btn.onclick=e=>{e.preventDefault();chat.style.display==='flex'?closeChat():open()};
-            close.onclick=e=>{e.preventDefault();closeChat()};
-            function findGame(q){const n=norm(q);for(const k in aliases)if(n.includes(k))return aliases[k];let best=null,len=0;for(const g of games){const x=norm(g[0]);if(n.includes(x)&&x.length>len){best=g[0];len=x.length}}return best}
-            function findPhone(q){const n=norm(q);let best=null,len=0;for(const p of phones){const x=norm(p.name);if(n.includes(x)&&x.length>len){best=p;len=x.length}}return best}
-            function currentPhone(){const v=$('device')?.value||'';const i=Number(v.replace('phone_',''));return phones[i]||phones[0]}
-            function selectPhone(p){if(!p)return;const d=$('deviceSearch');if(d){d.value=p.name+' — '+p.variant+' — '+String(p.chip).toUpperCase();if(typeof selectDeviceBySearch==='function')selectDeviceBySearch()}}
-            function selectGame(g){const s=$('search');if(s){s.value=g;if(typeof render==='function')render()}}
-            function fpsText(g){const cards=[...document.querySelectorAll('.game')];const c=cards.find(x=>norm(x.querySelector('h3')?.textContent)===norm(g));return c?.querySelector('.fps')?.textContent||'نامشخص'}
-            function answer(q){
-              const n=norm(q), p=findPhone(q)||currentPhone(), g=findGame(q);
-              if(/^(سلام|درود|hello|hi|hey)\\b/.test(n))return 'سلام 😎 من دستیار FPS ARENA هستم. اسم گوشی و بازی‌ات را بگو تا FPS و تنظیمات مناسب را بررسی کنم.';
-              if(/کمک|help|چه کار/.test(n))return 'می‌توانم FPS تخمینی را بررسی کنم، گوشی‌ها را مقایسه کنم، RAM و کیفیت را تنظیم کنم و بازی مناسب پیشنهاد بدهم.';
-              if(/مقایسه|بهتره|بهتر است|فرق|vs|در برابر/.test(n)){
-                const hits=[];for(const x of phones)if(n.includes(norm(x.name))&&!hits.some(h=>h.name===x.name))hits.push(x);
-                if(hits.length<2)return 'نام هر دو گوشی را بنویس؛ مثلاً «POCO C65 با Redmi 13C مقایسه کن».';
-                const a=hits[0],b=hits[1],pa=Number((typeof power!=='undefined'?power[a.chip]:1.5)||1.5),pb=Number((typeof power!=='undefined'?power[b.chip]:1.5)||1.5);
-                return '📱 '+a.name+' ('+a.chip.toUpperCase()+')\\n📱 '+b.name+' ('+b.chip.toUpperCase()+')\\n\\n⚡ بر اساس امتیاز چیپست دیتابیس: '+(pa>pb?a.name:pb>pa?b.name:'تقریباً برابر')+' قوی‌تر است.\\n\\nنتیجه تخمینی است و بنچمارک واقعی نیست.';
-              }
-              if(/ram|رم/.test(n)){const m=n.match(/(?:ram|رم)\\s*(4|6|8|12|16)/);if(m&&$('ram')){$('ram').value=m[1];if(typeof render==='function')render()}return 'RAM فعلی سایت '+($('ram')?.value||8)+'GB است. چیپست، دما و بهینه‌سازی بازی هم روی FPS اثر دارند.'}
-              if(/کیفیت|گرافیک|quality|low|medium|high|ultra/.test(n)){const qv=/ultra|خیلی بالا/.test(n)?'ultra':/high|بالا/.test(n)?'high':/low|پایین/.test(n)?'low':'medium';if($('quality')){$('quality').value=qv;if(typeof render==='function')render()}return 'کیفیت روی '+qv.toUpperCase()+' تنظیم شد.'}
-              if(/fps|فریم|فریم ریت|چند فریم/.test(n)){if(p)selectPhone(p);if(g){selectGame(g);return '📱 '+p.name+'\\n🎮 '+g+'\\n⚡ FPS تخمینی سایت: '+fpsText(g)+'\\n\\n⚠️ عدد تخمینی است و دما، نسخه بازی و تنظیمات واقعی می‌توانند تغییرش دهند.'}return 'اسم بازی را هم بفرست؛ مثلاً «POCO C65 فری فایر چند FPS؟»'}
-              if(/گوشی|phone|موبایل|پردازنده|چیپست/.test(n)){if(p)selectPhone(p);return '📱 '+(p?.name||'نامشخص')+'\\n⚙️ چیپست: '+(p?.chip||'نامشخص')+'\\n💾 بازی را هم بگو تا FPS را بررسی کنم.'}
-              if(g){selectGame(g);return '🎮 '+g+' پیدا شد. حالا اسم گوشی را بفرست تا FPS تخمینی را حساب کنم.'}
-              if(p){selectPhone(p);return '📱 '+p.name+' پیدا شد. حالا اسم بازی را بفرست.'}
-              return 'متوجه شدم 😊 برای جواب دقیق، اسم گوشی یا بازی را بنویس.';
-            }
-            form.addEventListener('submit',e=>{e.preventDefault();try{const q=input.value.trim();if(!q)return;add(q,true);input.value='';open();setTimeout(()=>{try{add(answer(q))}catch(err){console.error(err);add('یک خطای موقت رخ داد؛ دوباره بفرست.')}},120)}catch(err){console.error(err)}});
-          })();
-          </script>'''
-          s=s[:start]+new+s[end+9:]
-          p.write_text(s,encoding='utf-8')
-          PY
-      - name: Validate
-        run: |
-          grep -q 'const games=' index.html
-          grep -q 'window.__fpsArenaGames=games' index.html
-          grep -q 'window.__fpsArenaPhones=phoneCatalog' index.html
-          grep -q 'id="aiChatBtn"' index.html
-          grep -q 'addEventListener' index.html
-          echo 'chatbot fixed'
-      - name: Commit
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          git diff --cached --quiet || (git commit -m 'Fix FPS ARENA chatbot runtime' && git push)
+      - run: echo "Disabled; FPS ARENA uses the smart chatbot installer."
