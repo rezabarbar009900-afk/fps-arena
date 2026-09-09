@@ -1,46 +1,9 @@
-name: FPS ARENA Site Fix V2
+name: Legacy FPS ARENA site fixer (disabled)
 on:
-  push:
-    branches: [main]
-permissions:
-  contents: write
+  workflow_dispatch:
 jobs:
-  fix:
-    if: ${{ !contains(github.event.head_commit.message, '[site-fix-v2]') }}
+  disabled:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Repair site and chatbot
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('index.html'); s=p.read_text(encoding='utf-8')
-          s=s.replace('margin-top:20px','margin-top:55px')
-          if 'window.__fpsArenaGames=games' not in s:
-              s=s.replace('];\n\nconst phoneSeeds', '];\nwindow.__fpsArenaGames=games;\n\nconst phoneSeeds', 1)
-          if 'window.__fpsArenaPhones=phoneCatalog' not in s:
-              s=s.replace("const deviceEl=document.getElementById('device')", "window.__fpsArenaPhones=phoneCatalog;\nconst deviceEl=document.getElementById('device')", 1)
-          if 'id="aiChatBtn"' not in s:
-              css='''<style>#aiChatBtn{position:fixed;left:20px;bottom:20px;width:60px;height:60px;border:0;border-radius:50%;z-index:100;cursor:pointer;font-size:28px;background:linear-gradient(135deg,#735cff,#2de8e7);color:#fff;box-shadow:0 10px 35px #0009}#aiChat{position:fixed;left:20px;bottom:92px;width:min(390px,calc(100vw - 28px));height:min(560px,calc(100vh - 115px));z-index:99;background:#0c0f18f7;border:1px solid #353b56;border-radius:20px;display:none;flex-direction:column;overflow:hidden;box-shadow:0 20px 70px #000b}.aih{padding:15px;background:#14182a;border-bottom:1px solid #2b3042;display:flex;justify-content:space-between}.aim{flex:1;overflow:auto;padding:14px}.am{padding:10px 12px;margin:8px 0;border-radius:14px;white-space:pre-wrap;line-height:1.6}.ab{background:#171c2b}.au{background:#2d4d83;margin-right:auto}.aif{display:flex;gap:8px;padding:10px;border-top:1px solid #292f41}.aii{flex:1;padding:11px;border-radius:11px;border:1px solid #30374b;background:#111521;color:#fff}.ais{padding:0 15px;border:0;border-radius:11px;background:#695cff;color:#fff;font-weight:bold}</style>'''
-              html='''<button id="aiChatBtn" type="button">🤖</button><section id="aiChat"><div class="aih"><b>🤖 دستیار FPS ARENA</b><button id="aiClose" type="button">×</button></div><div id="aiMsgs" class="aim"><div class="am ab">سلام 👋 اسم گوشی و بازی را بگو؛ مثلاً «POCO C65 فری فایر چند FPS؟»</div></div><form id="aiForm" class="aif"><input id="aiInput" class="aii" autocomplete="off" placeholder="گوشی + بازی..."><button class="ais">ارسال</button></form></section>'''
-              js='''<script>(()=>{const boot=()=>{const c=document.getElementById('aiChat'),b=document.getElementById('aiChatBtn'),x=document.getElementById('aiClose'),f=document.getElementById('aiForm'),i=document.getElementById('aiInput'),m=document.getElementById('aiMsgs');if(!c||!b||!x||!f||!i||!m)return;const open=()=>{c.style.display='flex';i.focus()},close=()=>c.style.display='none',add=(t,k)=>{let d=document.createElement('div');d.className='am '+k;d.textContent=t;m.appendChild(d);m.scrollTop=m.scrollHeight};b.onclick=open;x.onclick=close;const norm=s=>String(s).toLowerCase().replace(/[يى]/g,'ی').replace(/ك/g,'ک');const aliases={'فری فایر':'Free Fire','فری فایر':'Free Fire','پابجی':'PUBG Mobile','کالاف':'Call of Duty: Mobile','ماینکرفت':'Minecraft','گنشین':'Genshin Impact','ای فوتبال':'eFootball','براول':'Brawl Stars'};function game(q){let n=norm(q);for(let k in aliases)if(n.includes(k))return aliases[k];let a=window.__fpsArenaGames||[];return a.find(g=>n.includes(norm(g[0])))?.[0]||null}function phone(q){let n=norm(q),a=window.__fpsArenaPhones||[];return a.find(p=>n.includes(norm(p.name)))?.name||null}function calc(q){let g=game(q),p=phone(q);if(!g&&!p)return 'اسم گوشی و بازی را بنویس؛ مثلاً «POCO C65 فری فایر چند FPS؟»';if(!p)return 'گوشی پیدا شد ولی اسم بازی را هم بفرست.';if(!g)return 'گوشی پیدا شد؛ اسم بازی را هم بفرست.';let ds=document.getElementById('deviceSearch'),ss=document.getElementById('search');if(ds){ds.value=p; if(typeof selectDeviceBySearch==='function')selectDeviceBySearch()}if(ss){ss.value=g;if(typeof render==='function')render()}let el=document.querySelector('.game .fps');return '📱 '+p+'\n🎮 '+g+'\n⚡ '+(el?el.textContent:'FPS تخمینی محاسبه شد')+'\n\nنتیجه تخمینی است و دما، نسخه بازی و تنظیمات اثر دارند.'}f.onsubmit=e=>{e.preventDefault();let q=i.value.trim();if(!q)return;add(q,'au');i.value='';setTimeout(()=>add(calc(q),'ab'),120);open()}};document.readyState==='loading'?document.addEventListener('DOMContentLoaded',boot):boot()})();</script>'''
-              s=s.replace('</body>',css+html+js+'</body>')
-          p.write_text(s,encoding='utf-8')
-          PY
-      - name: Validate
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          s=Path('index.html').read_text(encoding='utf-8')
-          checks=['const games=[','const phoneSeeds=[','const phoneCatalog=[]','id="games"','id="deviceSearch"','id="aiChatBtn"','id="aiChat"','id="aiForm"','margin-top:55px']
-          bad=[x for x in checks if x not in s]
-          if bad: raise SystemExit('Missing: '+', '.join(bad))
-          print('FPS ARENA repair validation OK')
-          PY
-      - name: Commit
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          git diff --cached --quiet || git commit -m 'Repair games phones and chatbot [site-fix-v2]'
-          git push
+      - run: echo "Disabled; FPS ARENA now uses the stable smart chatbot workflow."
