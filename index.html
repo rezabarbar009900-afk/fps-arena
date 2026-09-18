@@ -19,6 +19,7 @@ body{perspective:1400px}
 <section class="hero"><span class="badge" id="badge">MOBILE GAMING DATABASE</span><h1>قدرت گوشی‌ات را در <span>بازی‌ها</span> ببین</h1><p id="sub">گوشی، رم و کیفیت را انتخاب کن و FPS تخمینی بازی را ببین.</p></section>
 
 
+
 <style id="telegramPromoStyle">
 #telegramPromo{max-width:1180px;margin:0 auto 28px;padding:0 20px}
 #telegramPromo .tgCard{position:relative;overflow:hidden;border:1px solid #6e4cff;border-radius:22px;padding:28px 26px;background:linear-gradient(135deg,#15102b,#0d1724 55%,#111022);box-shadow:0 18px 55px #0008;text-align:center;cursor:pointer;transition:.2s}
@@ -103,8 +104,21 @@ function render(){
 
 const T={fa:{title:'قدرت گوشی‌ات را در <span>بازی‌ها</span> ببین',sub:'گوشی، رم و کیفیت را انتخاب کن و FPS تخمینی بازی را ببین.'},en:{title:'See your phone’s <span>gaming power</span>',sub:'Choose your device, RAM and quality to estimate FPS.'},zh:{title:'查看手机的<span>游戏性能</span>',sub:'选择设备、内存和画质，估算游戏 FPS。'},ar:{title:'شاهد <span>أداء هاتفك</span> في الألعاب',sub:'اختر الهاتف والذاكرة والجودة لتقدير FPS.'},tr:{title:'Telefonunun <span>oyun gücünü</span> gör',sub:'Cihaz, RAM ve kaliteyi seçerek FPS tahminini gör.'},es:{title:'Mira la <span>potencia gaming</span> de tu móvil',sub:'Elige dispositivo, RAM y calidad para estimar FPS.'}};
 document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.querySelector('.hero h1').innerHTML=t.title;document.getElementById('sub').textContent=t.sub;document.documentElement.lang=e.target.value;document.documentElement.dir=e.target.value==='fa'?'rtl':'ltr'};render();
-</script><!-- FPS_ARENA_REAL_AI_START -->
-<script id="fpsArenaPuterLoader">window.__fpsArenaPuterReady=null;function loadPuter(){if(window.puter?.ai?.chat)return Promise.resolve();if(window.__fpsArenaPuterReady)return window.__fpsArenaPuterReady;window.__fpsArenaPuterReady=new Promise((resolve,reject)=>{const s=document.createElement("script");s.src="https://js.puter.com/v2/";s.onload=()=>resolve();s.onerror=()=>reject(new Error("Puter load failed"));document.head.appendChild(s)});return window.__fpsArenaPuterReady}</script>
+</script><script id="fpsArenaStabilityFix">
+(()=>{
+  window.__fpsArenaStabilityFix=true;
+  window.addEventListener('error',e=>console.warn('FPS ARENA handled error:',e.message));
+  window.addEventListener('unhandledrejection',e=>{console.warn('FPS ARENA handled promise error:',e.reason);e.preventDefault()});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){
+      document.querySelectorAll('#fpsArenaAIBox.open').forEach(x=>x.classList.remove('open'));
+    }
+  });
+})();
+</script>
+
+<!-- FPS_ARENA_REAL_AI_START -->
+<script src="https://js.puter.com/v2/"></script>
 <style id="fpsArenaRealAIStyle">
 #fpsArenaAIBtn{position:fixed;right:18px;bottom:18px;z-index:2147483000;border:0;border-radius:999px;padding:14px 18px;background:linear-gradient(135deg,#744cff,#22d8e8);color:#fff;font-weight:900;font-size:15px;cursor:pointer;box-shadow:0 14px 45px #0009;direction:rtl}
 #fpsArenaAIBtn:hover{transform:translateY(-2px)}
@@ -187,11 +201,10 @@ document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.qu
     input.value=''; send.disabled=true;
     const wait=add('در حال فکر کردن…','bot','thinking');
     try{
-      await loadPuter();
       if(!window.puter?.ai?.chat) throw new Error('AI library not loaded');
       const sys=`تو دستیار اصلی سایت FPS ARENA هستی. فارسی را کاملاً روان و خودمانی جواب بده مگر کاربر زبان دیگری بخواهد. در گوشی‌ها، چیپست‌ها، بازی‌های موبایل، تنظیمات گرافیکی و FPS متخصص باش. پاسخ‌ها کاربردی، دقیق و نسبتاً کوتاه باشند. وقتی درباره FPS سؤال می‌شود بین تخمین دیتابیس سایت و بنچمارک واقعی تفاوت بگذار و عدد قطعیِ ساختگی نده. اگر اطلاعات سایت کافی نیست صریح بگو. ${siteContext()}`;
       const messages=[{role:'system',content:sys},...history.slice(-12)];
-      const res=await puter.ai.chat(messages,{model:'openai/gpt-5.6-luna',normalize:true,reasoning_effort:'medium'});
+      const res=await puter.ai.chat(messages,{model:'gpt-5.6-luna'});
       const answer=extractText(res).trim()||'پاسخی دریافت نشد. دوباره امتحان کن.';
       wait.remove(); add(answer,'bot');
       history.push({role:'assistant',content:answer});
@@ -209,16 +222,4 @@ document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.qu
 </script>
 <!-- FPS_ARENA_REAL_AI_END -->
 
-<script id="fpsArenaStabilityFix">
-(()=>{
-  window.__fpsArenaStabilityFix=true;
-  window.addEventListener('error',e=>console.warn('FPS ARENA handled error:',e.message));
-  window.addEventListener('unhandledrejection',e=>{console.warn('FPS ARENA handled promise error:',e.reason);e.preventDefault()});
-  document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){
-      document.querySelectorAll('#fpsArenaAIBox.open').forEach(x=>x.classList.remove('open'));
-    }
-  });
-})();
-</script>
 </body></html>
