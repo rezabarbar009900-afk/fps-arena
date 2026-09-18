@@ -192,7 +192,7 @@ document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.qu
       if(!window.puter?.ai?.chat) throw new Error('AI library not loaded');
       const sys=`تو دستیار اصلی سایت FPS ARENA هستی. فارسی را کاملاً روان و خودمانی جواب بده مگر کاربر زبان دیگری بخواهد. در گوشی‌ها، چیپست‌ها، بازی‌های موبایل، تنظیمات گرافیکی و FPS متخصص باش. پاسخ‌ها کاربردی، دقیق و نسبتاً کوتاه باشند. وقتی درباره FPS سؤال می‌شود بین تخمین دیتابیس سایت و بنچمارک واقعی تفاوت بگذار و عدد قطعیِ ساختگی نده. اگر اطلاعات سایت کافی نیست صریح بگو. ${siteContext()}`;
       const messages=[{role:'system',content:sys},...history.slice(-12)];
-      const res=await puter.ai.chat(messages,{model:'gpt-5.6-luna'});
+      const res=await puter.ai.chat(messages,{model:'openai/gpt-5.6-luna',normalize:true,reasoning_effort:'medium'});
       const answer=extractText(res).trim()||'پاسخی دریافت نشد. دوباره امتحان کن.';
       wait.remove(); add(answer,'bot');
       history.push({role:'assistant',content:answer});
@@ -210,4 +210,16 @@ document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.qu
 </script>
 <!-- FPS_ARENA_REAL_AI_END -->
 
+<script id="fpsArenaStabilityFix">
+(()=>{
+  window.__fpsArenaStabilityFix=true;
+  window.addEventListener('error',e=>console.warn('FPS ARENA handled error:',e.message));
+  window.addEventListener('unhandledrejection',e=>{console.warn('FPS ARENA handled promise error:',e.reason);e.preventDefault()});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){
+      document.querySelectorAll('#fpsArenaAIBox.open').forEach(x=>x.classList.remove('open'));
+    }
+  });
+})();
+</script>
 </body></html>
