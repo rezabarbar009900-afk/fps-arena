@@ -43,6 +43,34 @@ body:before{content:"";position:fixed;inset:-20%;pointer-events:none;z-index:-1;
 .fpsVideoGlow{position:absolute;width:240px;height:240px;border-radius:50%;right:-90px;top:-120px;background:#6c4cff28;filter:blur(45px);pointer-events:none}
 @media(max-width:700px){.game:hover{transform:translateY(-7px) translateZ(10px) scale(1.01)}#fpsArenaVideo{padding:0 12px}.fpsVideoCard{border-radius:18px}.fpsVideoHead{padding:16px}}
 @media(prefers-reduced-motion:reduce){body:before{display:none}.game:hover,.fpsVideoCard:hover{transform:none}}
+</style><style id="fpsArenaUltra3D">
+html{background:#05060b}
+body{font-family:Tahoma,Arial,sans-serif;perspective:2200px;transform-style:preserve-3d}
+body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;background:radial-gradient(circle at 50% 20%,transparent 35%,#0006 100%);mix-blend-mode:multiply}
+.hero{transform-style:preserve-3d;isolation:isolate}
+.hero .badge,.hero h1,.hero p{will-change:transform}
+.hero .badge{box-shadow:0 12px 30px #0009,0 0 35px #7b4cff22;border-radius:999px}
+.hero h1{text-shadow:0 14px 0 #101321,0 22px 45px #000c}
+.panel,.fpsVideoCard,#telegramPromo .tgCard{position:relative;transform-style:preserve-3d}
+.panel:before,.fpsVideoCard:before,#telegramPromo .tgCard:before{content:"";position:absolute;inset:8px;border-radius:inherit;border:1px solid #ffffff08;pointer-events:none;transform:translateZ(-8px);box-shadow:0 25px 50px #000a}
+.panel:after,.fpsVideoCard:after,#telegramPromo .tgCard:after{content:"";position:absolute;left:8%;right:8%;bottom:-24px;height:28px;border-radius:50%;background:#0009;filter:blur(16px);z-index:-1;transform:translateZ(-20px)}
+.game{min-height:255px;transform-style:preserve-3d;backface-visibility:hidden}
+.game:after{content:"";position:absolute;left:12px;right:12px;bottom:8px;height:10px;border-radius:50%;background:#0008;filter:blur(8px);transform:translateZ(-15px)}
+.game:hover{transform:translateY(-14px) rotateX(8deg) rotateY(-8deg) translateZ(32px) scale(1.025)}
+.game>*{position:relative;transform:translateZ(18px)}
+.game .icon{transform:translateZ(35px) scale(1.08);text-shadow:0 14px 18px #000}
+.game h3{transform:translateZ(24px)}
+.game .fps{transform:translateZ(28px);text-shadow:0 8px 20px #000}
+.stat{transform-style:preserve-3d;box-shadow:0 12px 28px #0008,inset 0 1px #fff1}
+.controls{transform-style:preserve-3d}
+.controls>*{transform:translateZ(12px)}
+.fpsVideoFrame{transform:translateZ(14px);box-shadow:0 20px 50px #000c}
+#fpsArenaAIBtn{transform-style:preserve-3d;box-shadow:0 18px 45px #000b,0 0 30px #704cff33}
+#fpsArenaAIBox{transform-style:preserve-3d;box-shadow:0 30px 100px #000d}
+#fpsArenaAIBox.open{animation:fpsAiIn .35s ease}
+@keyframes fpsAiIn{from{opacity:0;transform:translateY(18px) rotateX(-6deg) scale(.96)}to{opacity:1;transform:none}}
+@media(max-width:700px){.game:hover{transform:translateY(-8px) translateZ(12px) scale(1.01)}}
+@media(prefers-reduced-motion:reduce){#fpsArenaAIBox.open{animation:none}.game:hover{transform:none}}
 </style></head><body><nav class="nav"><div class="logo">FPS <b>ARENA</b></div><div><select class="lang" id="lang"><option value="fa">فارسی</option><option value="en">English</option><option value="zh">中文</option><option value="ar">العربية</option><option value="tr">Türkçe</option><option value="es">Español</option></select></div></nav>
 <section class="hero"><span class="badge" id="badge">MOBILE GAMING DATABASE</span><h1>قدرت گوشی‌ات را در <span>بازی‌ها</span> ببین</h1><p id="sub">گوشی، رم و کیفیت را انتخاب کن و FPS تخمینی بازی را ببین.</p></section>
 
@@ -254,4 +282,19 @@ document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.qu
 </script>
 <!-- FPS_ARENA_REAL_AI_END -->
 
-</body></html>
+<script id="fpsArena3DMouse">
+(()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+const els=[...document.querySelectorAll('.hero,.panel,.fpsVideoCard,#telegramPromo .tgCard')];
+let raf=0;
+document.addEventListener('pointermove',e=>{
+ if(innerWidth<760)return;
+ cancelAnimationFrame(raf);
+ raf=requestAnimationFrame(()=>{
+  const x=(e.clientX/innerWidth-.5), y=(e.clientY/innerHeight-.5);
+  document.querySelector('.hero')?.style.setProperty('transform',`rotateX(${-y*2}deg) rotateY(${x*3}deg)`);
+  document.querySelector('.panel')?.style.setProperty('transform',`translateZ(20px) rotateX(${-y*1.2}deg) rotateY(${x*2}deg)`);
+  document.querySelector('.fpsVideoCard')?.style.setProperty('transform',`translateZ(18px) rotateX(${-y*1.5}deg) rotateY(${x*2.5}deg)`);
+ });
+});
+})();
+</script></body></html>
