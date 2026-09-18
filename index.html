@@ -15,6 +15,34 @@ body{perspective:1400px}
 #fpsArenaAIBtn,#fpsArenaSmartBtn{transform-style:preserve-3d;transition:transform .2s ease,box-shadow .2s ease}#fpsArenaAIBtn:hover,#fpsArenaSmartBtn:hover{transform:translateY(-4px) translateZ(12px) rotateX(4deg)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important;transform:none!important}}
 @media(max-width:700px){body{perspective:900px}.game:hover{transform:translateY(-5px) translateZ(7px)}}
+</style><style id="fpsArena3DPlus">
+html{scroll-behavior:smooth}
+body{perspective:1800px;background-attachment:fixed;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:-20%;pointer-events:none;z-index:-1;background:radial-gradient(circle at 15% 25%,#6d3cff18,transparent 28%),radial-gradient(circle at 85% 65%,#00e5ff12,transparent 30%);transform:translateZ(-120px) scale(1.15)}
+.nav{transform:translateZ(24px);box-shadow:0 14px 40px #0008}
+.hero{position:relative;transform-style:preserve-3d}
+.hero:after{content:"";position:absolute;left:50%;bottom:5px;width:55%;height:20px;transform:translateX(-50%) translateZ(-10px);background:#5d3cff33;filter:blur(25px);border-radius:50%}
+.hero h1{letter-spacing:-1px}
+.wrap{transform-style:preserve-3d}
+.panel{transform:translateZ(20px);box-shadow:0 30px 100px #000b,0 0 45px #604cff0d}
+.controls .input,.controls select{transition:transform .22s,box-shadow .22s,border-color .22s}
+.controls .input:focus,.controls select:focus{transform:translateZ(10px);box-shadow:0 12px 30px #0008,0 0 20px #6d5cff18;border-color:#675cff}
+.games{gap:20px}
+.game{min-height:245px;border-radius:19px;transform-style:preserve-3d}
+.game:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,#ffffff09,transparent 35%,#6d5cff08);pointer-events:none}
+.game:hover{transform:translateY(-12px) rotateX(5deg) rotateY(-5deg) translateZ(24px) scale(1.015)}
+.game .icon{filter:drop-shadow(0 10px 14px #000a)}
+.stat:hover{transform:translateZ(28px) rotateX(5deg) rotateY(-2deg)}
+#fpsArenaVideo{max-width:1180px;margin:0 auto 35px;padding:0 20px;transform-style:preserve-3d}
+.fpsVideoCard{position:relative;overflow:hidden;border:1px solid #303957;border-radius:24px;background:#0c101a;box-shadow:0 30px 80px #000b;transform:translateZ(18px);transition:transform .3s,box-shadow .3s}
+.fpsVideoCard:hover{transform:translateY(-6px) rotateX(2deg) rotateY(-2deg) translateZ(28px);box-shadow:0 40px 100px #000d}
+.fpsVideoHead{padding:20px 22px 12px;text-align:right}
+.fpsVideoHead h2{margin:0 0 7px;font-size:24px}.fpsVideoHead p{margin:0;color:#929aae}
+.fpsVideoFrame{position:relative;aspect-ratio:16/9;background:#05070b}
+.fpsVideoFrame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.fpsVideoGlow{position:absolute;width:240px;height:240px;border-radius:50%;right:-90px;top:-120px;background:#6c4cff28;filter:blur(45px);pointer-events:none}
+@media(max-width:700px){.game:hover{transform:translateY(-7px) translateZ(10px) scale(1.01)}#fpsArenaVideo{padding:0 12px}.fpsVideoCard{border-radius:18px}.fpsVideoHead{padding:16px}}
+@media(prefers-reduced-motion:reduce){body:before{display:none}.game:hover,.fpsVideoCard:hover{transform:none}}
 </style></head><body><nav class="nav"><div class="logo">FPS <b>ARENA</b></div><div><select class="lang" id="lang"><option value="fa">فارسی</option><option value="en">English</option><option value="zh">中文</option><option value="ar">العربية</option><option value="tr">Türkçe</option><option value="es">Español</option></select></div></nav>
 <section class="hero"><span class="badge" id="badge">MOBILE GAMING DATABASE</span><h1>قدرت گوشی‌ات را در <span>بازی‌ها</span> ببین</h1><p id="sub">گوشی، رم و کیفیت را انتخاب کن و FPS تخمینی بازی را ببین.</p></section>
 
@@ -34,7 +62,9 @@ body{perspective:1400px}
     <div class="tgCard"><div class="tgGlow"></div><h2>🌍🔥 BB Chat</h2><p>💬 یک دورهمی دوستانه برای چت و آشنایی با آدم‌های مختلف از سراسر دنیا!</p></div>
   </a>
 </section>
-<main class="wrap"><section class="panel"><div class="controls"><input class="input" id="search" placeholder="🔎 جستجوی بازی..." oninput="render()"><input class="input" id="deviceSearch" list="deviceOptions" placeholder="📱 جستجوی گوشی..." autocomplete="off" oninput="selectDeviceBySearch()"><datalist id="deviceOptions"></datalist><select id="device" onchange="render()" style="display:none"><option value="phone_60">POCO C65</option></select><select id="ram" onchange="render()"><option value="4">RAM 4GB</option><option value="6">RAM 6GB</option><option value="8" selected>RAM 8GB</option><option value="12">RAM 12GB</option><option value="16">RAM 16GB</option></select><select id="quality" onchange="render()"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="ultra">Ultra</option></select></div><div class="stats"><div class="stat">🎮 <b id="count">100</b> بازی</div><div class="stat">📱 <b>10,000</b> گوشی/کانفیگ</div><div class="stat">⚡ <b>FPS</b> Estimator</div></div><div class="games" id="games"></div></section></main>
+<section id="fpsArenaVideo" aria-label="ویدئوی گیمینگ">
+<div class="fpsVideoCard"><div class="fpsVideoGlow"></div><div class="fpsVideoHead"><h2>🎮 دنیای گیم موبایل</h2><p>یک ویدئوی گیم‌پلی مرتبط با بازی‌های FPS موبایل</p></div><div class="fpsVideoFrame"><iframe src="https://www.youtube.com/embed/uxpYBPf1en0?rel=0" title="Call of Duty Mobile Gameplay Trailer" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div></div>
+</section><main class="wrap"><section class="panel"><div class="controls"><input class="input" id="search" placeholder="🔎 جستجوی بازی..." oninput="render()"><input class="input" id="deviceSearch" list="deviceOptions" placeholder="📱 جستجوی گوشی..." autocomplete="off" oninput="selectDeviceBySearch()"><datalist id="deviceOptions"></datalist><select id="device" onchange="render()" style="display:none"><option value="phone_60">POCO C65</option></select><select id="ram" onchange="render()"><option value="4">RAM 4GB</option><option value="6">RAM 6GB</option><option value="8" selected>RAM 8GB</option><option value="12">RAM 12GB</option><option value="16">RAM 16GB</option></select><select id="quality" onchange="render()"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="ultra">Ultra</option></select></div><div class="stats"><div class="stat">🎮 <b id="count">100</b> بازی</div><div class="stat">📱 <b>10,000</b> گوشی/کانفیگ</div><div class="stat">⚡ <b>FPS</b> Estimator</div></div><div class="games" id="games"></div></section></main>
 <footer class="footer">FPS ARENA © 2026 — FPSها بر اساس چیپست، کیفیت و بار تقریبی هر بازی تخمین زده می‌شوند و جایگزین بنچمارک واقعی نیستند.</footer>
 <script>
 const games=[['Minecraft','⛏️',1],['Free Fire','🔥',.55],['Call of Duty: Mobile','🎯',1.25],['PUBG Mobile','🪖',1.2],['Fortnite','🚌',1.5],['Roblox','🧱',.8],['Genshin Impact','🌌',2],['Honkai: Star Rail','🚂',2.1],['eFootball','⚽',1],['Mobile Legends: Bang Bang','⚔️',.65],['Brawl Stars','⭐',.55],['Arena Breakout','🔫',1.55],['Delta Force','🎖️',1.6],['Asphalt Legends Unite','🏎️',1.45],['Terraria','🌳',.35],['Stardew Valley','🌾',.25],['Among Us','👽',.3],['Asphalt 9','🏁',1.35],['Real Racing 3','🏎️',1.05],['Need for Speed No Limits','🚘',1.05],['Critical Ops','🎯',.65],['Standoff 2','🔫',.65],['Shadow Fight 4','🥷',.8],['Dead Cells','⚔️',.55],['League of Legends: Wild Rift','🛡️',.85],['Arena of Valor','⚔️',.7],['Pokémon UNITE','⚡',.75],['Clash Royale','👑',.35],['Clash of Clans','🏰',.3],['Subway Surfers','🏄',.3],['Temple Run 2','🏃',.3],['Dream League Soccer','⚽',.55],['EA SPORTS FC Mobile','⚽',.7],['Wuthering Waves','🌊',2],['Zenless Zone Zero','🏙️',1.9],['PUBG: New State','🪖',1.25],['World of Tanks Blitz','🛡️',.9],['War Thunder Mobile','✈️',1.25],['Diablo Immortal','😈',1.25],['Black Desert Mobile','🐉',1.45],['Tower of Fantasy','🌠',1.65],['CarX Street','🚗',1.7],['GRID Autosport','🏎️',1.2],['Mortal Kombat Mobile','🥊',.8],['Sky: Children of the Light','☁️',1.1],['Pokémon GO','⚡',.5],['Geometry Dash','🔺',.3],['Asphalt Xtreme','🏜️',.8],['World of Warships Blitz','⚓',.9],['Shadowgun Legends','🚀',1],['Modern Combat 5','🎖️',.75],['Call of Duty: Warzone Mobile','💥',2.2],['Rainbow Six Mobile','🛡️',1.45],['Delta Force Mobile','🎖️',1.6],['Once Human','🧟',2.0],['PUBG Mobile Lite','🪖',.7],['Undawn','🌅',1.8],['Lost Light','🎒',1.5],['Farlight 84','🚀',1.2],['Blood Strike','💥',1.0],['Combat Master Mobile','🎯',.75],['World War Heroes','🎖️',.7],['Modern Strike Online','🔫',.65],['Bullet Force','🔫',.6],['Into the Dead 2','🧟',.75],['Dead Trigger 2','🧟',.65],['The Walking Dead: Survivors','🧟',.8],['Marvel Future Fight','🦸',1.0],['Dragon Ball Legends','🐉',.85],['One Piece Fighting Path','🏴‍☠️',1.15],['Naruto Mobile','🍥',1.1],['Black Clover M','🍀',1.0],['Honkai Impact 3rd','⚡',1.45],['Punishing: Gray Raven','⚔️',1.25],['Reverse: 1999','🕰️',1.0],['Arknights','🏰',.7],['AFK Journey','🧙',1.0],['Dislyte','🎵',.9],['Pokémon Masters EX','⚡',.75],['Marvel Snap','🃏',.45],['Hearthstone','🃏',.45],['Legends of Runeterra','🃏',.5],['Yu-Gi-Oh! Master Duel','🃏',.8],['Rocket League Sideswipe','🚗',.7],['NBA 2K Mobile','🏀',1.0],['World Soccer Champs','⚽',.4],['Car Parking Multiplayer','🚘',1.0],['Driving School Simulator','🚗',.9],['Beach Buggy Racing 2','🏎️',.65],['Real Steel World Robot Boxing','🤖',.9],['Shadowgun War Games','🚀',1.0],['Mech Arena','🤖',1.0],['World of Warships','⚓',1.0],['Albion Online','🛡️',.85],['Black Clover M','🍀',1.0],['Minecraft Dungeons','⛏️',1.0],['Monument Valley 2','🏛️',.45],['Fruit Ninja','🍉',.3],['Angry Birds 2','🐦',.35],['Pokémon Sleep','😴',.4]];
@@ -141,12 +171,12 @@ document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.qu
 @media(max-width:520px){#fpsArenaAIBtn{right:12px;bottom:12px}#fpsArenaAIBox{right:6px;bottom:68px;width:calc(100vw - 12px);height:calc(100vh - 82px);border-radius:18px}}
 </style>
 
-<button id="fpsArenaAIBtn" type="button">🤖 هوش مصنوعی</button>
+<button id="fpsArenaAIBtn" type="button">🎮 دستیار FPS</button>
 <section id="fpsArenaAIBox" aria-label="FPS ARENA AI">
-  <div id="fpsArenaAIHead"><div><strong>🤖 FPS ARENA AI</strong><span class="fpsArenaAIBadge">GPT-5.6</span></div><button id="fpsArenaAIClose" type="button" aria-label="بستن">×</button></div>
+  <div id="fpsArenaAIHead"><div><strong>🎮 FPS ARENA Assistant</strong></div><button id="fpsArenaAIClose" type="button" aria-label="بستن">×</button></div>
   <div id="fpsArenaAIMsgs"></div>
   <div id="fpsArenaAIQuick"><button type="button">FPS فری فایر روی POCO C65</button><button type="button">POCO C65 یا Redmi 13C؟</button><button type="button">بهترین تنظیم برای بازی</button></div>
-  <form id="fpsArenaAIForm"><input id="fpsArenaAIInput" autocomplete="off" placeholder="هرچی درباره گوشی، بازی و FPS می‌خوای بپرس…"><button id="fpsArenaAISend" type="submit">ارسال</button></form>
+  <form id="fpsArenaAIForm"><input id="fpsArenaAIInput" autocomplete="off" placeholder="درباره گوشی، بازی و FPS بپرس…"><button id="fpsArenaAISend" type="submit">ارسال</button></form>
 </section>
 
 <script>
@@ -217,7 +247,7 @@ document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.qu
 
   form.addEventListener('submit',e=>{e.preventDefault();ask(input.value)});
   document.querySelectorAll('#fpsArenaAIQuick button').forEach(b=>b.addEventListener('click',()=>{open();ask(b.textContent)}));
-  add('سلام 👋 من هوش مصنوعی واقعی FPS ARENA هستم. درباره گوشی، بازی، FPS، مقایسه مدل‌ها و تنظیمات گیم ازم بپرس.','bot');
+  add('سلام 👋 من دستیار FPS ARENA هستم. درباره گوشی، بازی، FPS، مقایسه مدل‌ها و تنظیمات گیم ازم بپرس.','bot');
 })();
 </script>
 <!-- FPS_ARENA_REAL_AI_END -->
