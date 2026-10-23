@@ -79,6 +79,7 @@ body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;ba
 <section id="fpsArenaVideo" aria-label="ویدئوی گیمینگ">
 <div class="fpsVideoCard"><div class="fpsVideoGlow"></div><div class="fpsVideoHead"><h2>🎮 دنیای گیم موبایل</h2><p>یک ویدئوی گیم‌پلی مرتبط با بازی‌های FPS موبایل</p></div><div class="fpsVideoFrame"><iframe src="https://www.youtube.com/embed/uxpYBPf1en0?rel=0" title="Call of Duty Mobile Gameplay Trailer" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div></div>
 </section>
+
 <style id="telegramPromoStyle">
 #telegramPromo{max-width:1180px;margin:0 auto 28px;padding:0 20px}
 #telegramPromo .tgCard{position:relative;overflow:hidden;border:1px solid #6e4cff;border-radius:22px;padding:28px 26px;background:linear-gradient(135deg,#15102b,#0d1724 55%,#111022);box-shadow:0 18px 55px #0008;text-align:center;cursor:pointer;transition:.2s}
@@ -177,6 +178,22 @@ document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.qu
 </script>
 
 
+<script id="fpsArena3DMouse">
+(()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+const els=[...document.querySelectorAll('.hero,.panel,.fpsVideoCard,#telegramPromo .tgCard')];
+let raf=0;
+document.addEventListener('pointermove',e=>{
+ if(innerWidth<760)return;
+ cancelAnimationFrame(raf);
+ raf=requestAnimationFrame(()=>{
+  const x=(e.clientX/innerWidth-.5), y=(e.clientY/innerHeight-.5);
+  document.querySelector('.hero')?.style.setProperty('transform',`rotateX(${-y*2}deg) rotateY(${x*3}deg)`);
+  document.querySelector('.panel')?.style.setProperty('transform',`translateZ(20px) rotateX(${-y*1.2}deg) rotateY(${x*2}deg)`);
+  document.querySelector('.fpsVideoCard')?.style.setProperty('transform',`translateZ(18px) rotateX(${-y*1.5}deg) rotateY(${x*2.5}deg)`);
+ });
+});
+})();
+</script>
 <!-- FPS_ARENA_REAL_AI_START -->
 <script src="https://js.puter.com/v2/"></script>
 <style id="fpsArenaRealAIStyle">
@@ -264,7 +281,7 @@ document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.qu
       if(!window.puter?.ai?.chat) throw new Error('AI library not loaded');
       const sys=`تو دستیار اصلی سایت FPS ARENA هستی. فارسی را کاملاً روان و خودمانی جواب بده مگر کاربر زبان دیگری بخواهد. در گوشی‌ها، چیپست‌ها، بازی‌های موبایل، تنظیمات گرافیکی و FPS متخصص باش. پاسخ‌ها کاربردی، دقیق و نسبتاً کوتاه باشند. وقتی درباره FPS سؤال می‌شود بین تخمین دیتابیس سایت و بنچمارک واقعی تفاوت بگذار و عدد قطعیِ ساختگی نده. اگر اطلاعات سایت کافی نیست صریح بگو. ${siteContext()}`;
       const messages=[{role:'system',content:sys},...history.slice(-12)];
-      const res=await puter.ai.chat(messages,{model:'openai/gpt-5.6-luna',normalize:true,reasoning_effort:'medium'});
+      const res=await puter.ai.chat(messages,{model:'gpt-5.6-luna'});
       const answer=extractText(res).trim()||'پاسخی دریافت نشد. دوباره امتحان کن.';
       wait.remove(); add(answer,'bot');
       history.push({role:'assistant',content:answer});
@@ -282,19 +299,4 @@ document.getElementById('lang').onchange=e=>{let t=T[e.target.value];document.qu
 </script>
 <!-- FPS_ARENA_REAL_AI_END -->
 
-<script id="fpsArena3DMouse">
-(()=>{if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-const els=[...document.querySelectorAll('.hero,.panel,.fpsVideoCard,#telegramPromo .tgCard')];
-let raf=0;
-document.addEventListener('pointermove',e=>{
- if(innerWidth<760)return;
- cancelAnimationFrame(raf);
- raf=requestAnimationFrame(()=>{
-  const x=(e.clientX/innerWidth-.5), y=(e.clientY/innerHeight-.5);
-  document.querySelector('.hero')?.style.setProperty('transform',`rotateX(${-y*2}deg) rotateY(${x*3}deg)`);
-  document.querySelector('.panel')?.style.setProperty('transform',`translateZ(20px) rotateX(${-y*1.2}deg) rotateY(${x*2}deg)`);
-  document.querySelector('.fpsVideoCard')?.style.setProperty('transform',`translateZ(18px) rotateX(${-y*1.5}deg) rotateY(${x*2.5}deg)`);
- });
-});
-})();
-</script></body></html>
+</body></html>
